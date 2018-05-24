@@ -83,10 +83,8 @@ public class Server implements Closeable {
                 LOG.debug("Starting server with config: {}", config);
 
             Server server = new Server(config);
-
             server.openConnection();
             server.startAcceptor();
-
             LOG.info("Server started on port: {}", config.getPort());
             return server;
         }
@@ -101,17 +99,14 @@ public class Server implements Closeable {
 
     private void startAcceptor() {
         acceptorPool = Executors.newSingleThreadExecutor(new ServerThreadFactory("con-acceptor"));
-
         acceptorPool.submit(new ConnectionHandler());
     }
-
     /**
      * Stops the server.
      */
     public void stop() {
         acceptorPool.shutdownNow();
         Utils.closeQuiet(socket);
-
         socket = null;
     }
 
@@ -120,7 +115,6 @@ public class Server implements Closeable {
             LOG.debug("Accepting connection on: {}", sock);
 
         Request req;
-
         try {
             req = parseRequest(sock);
 
@@ -130,25 +124,20 @@ public class Server implements Closeable {
         catch (URISyntaxException e) {
             if (LOG.isDebugEnabled())
                 LOG.error("Malformed URL", e);
-
             respond(SC_BAD_REQUEST, "Malformed URL", htmlMessage(SC_BAD_REQUEST + " Malformed URL"),
                     sock.getOutputStream());
-
             return;
         }
         catch (Exception e) {
             LOG.error("Error parsing request", e);
-
             respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
                     sock.getOutputStream());
-
             return;
         }
 
         if (!isMethodSupported(req.method)) {
             respond(SC_NOT_IMPLEMENTED, "Not Implemented", htmlMessage(SC_NOT_IMPLEMENTED + " Method \""
                     + req.method + "\" is not supported"), sock.getOutputStream());
-
             return;
         }
 
@@ -174,7 +163,6 @@ public class Server implements Closeable {
 
     private Request parseRequest(Socket socket) throws IOException, URISyntaxException {
         InputStreamReader reader = new InputStreamReader(socket.getInputStream());
-
         Request req = new Request(socket);
         StringBuilder sb = new StringBuilder(READER_BUF_SIZE); // TODO
 
@@ -183,10 +171,8 @@ public class Server implements Closeable {
                 parseRequestLine(req, sb);
             else
                 parseHeader(req, sb);
-
             sb.setLength(0);
         }
-
         return req;
     }
 
@@ -200,10 +186,8 @@ public class Server implements Closeable {
                     req.method = HttpMethod.valueOf(sb.substring(start, i));
                 else if (req.path == null) {
                     req.path = new URI(sb.substring(start, i));
-
                     break; // Ignore protocol for now
                 }
-
                 start = i + 1;
             }
         }
@@ -212,10 +196,8 @@ public class Server implements Closeable {
         assert req.path != null : "Request path can't be null";
 
         String query = req.path.getQuery();
-
         if (query != null) {
             start = 0;
-
             String key = null;
 
             for (int i = 0; i < query.length(); i++) {
@@ -241,42 +223,32 @@ public class Server implements Closeable {
 
     private void parseHeader(Request req, StringBuilder sb) {
         String key = null;
-
         int len = sb.length();
         int start = 0;
 
         for (int i = 0; i < len; i++) {
             if (sb.charAt(i) == HEADER_VALUE_SEPARATOR) {
                 key = sb.substring(start, i).trim();
-
                 start = i + 1;
-
                 break;
             }
         }
-
         req.addHeader(key, sb.substring(start, len).trim());
     }
 
     private int readLine(InputStreamReader in, StringBuilder sb) throws IOException {
         int c;
         int count = 0;
-
         while ((c = in.read()) >= 0) {
             if (c == LF)
                 break;
-
             sb.append((char) c);
-
             count++;
         }
-
         if (count > 0 && sb.charAt(count - 1) == CR)
             sb.setLength(--count);
-
         if (LOG.isTraceEnabled())
             LOG.trace("Read line: {}", sb.toString());
-
         return count;
     }
 
@@ -284,7 +256,6 @@ public class Server implements Closeable {
         out.write(("HTTP/1.0" + SPACE + code + SPACE + statusMsg + CRLF + CRLF + content).getBytes());
         out.flush();
     }
-
     /**
      * Invokes {@link #stop()}. Usable in try-with-resources.
      *
@@ -303,7 +274,6 @@ public class Server implements Closeable {
             while (!Thread.currentThread().isInterrupted()) {
                 try (Socket sock = socket.accept()) {
                     sock.setSoTimeout(config.getSocketTimeout());
-
                     processConnection(sock);
                 }
                 catch (Exception e) {
