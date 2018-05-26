@@ -11,13 +11,10 @@ import java.util.Map;
 public class Response {
 
     final Socket socket;
-    private String contentType = null;
-    private long contentLength = 0;
     private int statusCode = 0;
-    byte[] body;
+    private byte[] body;
     private Map<String, String> headers = new HashMap<>();
     private boolean getWR = false;
-    OutputStream outsStr;
 
     public void setContentType (String s){
         headers.put("Content-Type", s);
@@ -71,7 +68,7 @@ public class Response {
             }
             pw.write ("\r\n\r\n");
             if (body != null) {
-                pw.write(new String(body));
+                pw.write(new String(body) + "\r\n");
             }
         }
         return pw;
