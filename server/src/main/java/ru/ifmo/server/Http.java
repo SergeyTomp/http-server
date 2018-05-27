@@ -15,4 +15,12 @@ public class Http {
     /** OK header that preceded rest response data. */
     public static final String OK_HEADER = "HTTP/1.0 200 OK\r\n\r\n";
     public static final String OK_HEADER_PLUS = "HTTP/1.0 ";
+
+    /** Header names */
+    public static final String CONTENT_TYPE = "Content-Type";
+    public static final String CONTENT_LENGTH = "Content-Length";
+
+    /** Mime types */
+    public static final String TEXT_PLAIN = "text/plain";
+    public static final String URL_ENCODED = "application/x-www-form-urlencoded";
 }

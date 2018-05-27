@@ -4,8 +4,11 @@ import ru.ifmo.server.util.Utils;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import static ru.ifmo.server.Http.*;
 
 /**
  * Provides {@link java.io.OutputStream} ro respond to client.
@@ -17,18 +20,21 @@ public class Response {
     private byte[] body;
     private Map<String, String> headers = new HashMap<>();
     ByteArrayOutputStream byteOut;
+    private Writer printWriter;
 
-    
+
     Response(Socket socket) {
         this.socket = socket;
     }
     public void setContentType (String s){
-        headers.put("Content-Type", s);
+        headers.put(CONTENT_TYPE, s);
     }
     public void setContentLength(long l){
-        headers.put("Content-Length", String.valueOf(l));
+        headers.put(CONTENT_LENGTH, String.valueOf(l));
     }
     public void setStatusCode (int c){
+        if (c < Http.SC_CONTINUE || c > Http.SC_NOT_IMPLEMENTED)
+            throw new SecurityException("Not valid http status code:" + c);
         statusCode = c;
     }
     public void setBody (byte[] data){
@@ -42,7 +48,7 @@ public class Response {
         headers.put(k,v);
     }
     public Map<String, String> getHeaders (){
-        return headers;
+        return Collections.unmodifiableMap(headers);
     }
     public int getStatusCode (){
         return statusCode;
@@ -51,6 +57,7 @@ public class Response {
     /**
      * @return {@link OutputStream} connected to the client.
      */
+    // OutputStream для Server для отправки сформированного ответа
     public OutputStream getOutputStream() {
         try {
             return socket.getOutputStream();
@@ -61,9 +68,13 @@ public class Response {
         }
 //        return byteOut;
     }
+    // Writer для редактирования handler.handle, там через него пишем в тело ответа.
     public Writer getWriter(){
         byteOut = new ByteArrayOutputStream();
-        return new OutputStreamWriter(byteOut);
+        if (printWriter == null){
+            printWriter = new OutputStreamWriter(byteOut);
+        }
+        return printWriter;
     }
 }
 
