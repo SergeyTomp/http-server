@@ -53,11 +53,8 @@ public class Server implements Closeable {
     private static final int READER_BUF_SIZE = 1024;
 
     private final ServerConfig config;
-
     private ServerSocket socket;
-
     private ExecutorService acceptorPool;
-
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
 
     private Server(ServerConfig config) {
@@ -147,17 +144,7 @@ public class Server implements Closeable {
                 handler.handle(req, resp);
 //                byte[] body = resp.byteOut.toByteArray();
 //                resp.setContentLength(body.length);
-                resp.setContentLength(resp.byteOut.size());
-                Writer pw = new BufferedWriter(new OutputStreamWriter(resp.getOutputStream()));
-                pw.write((Http.OK_HEADER_PLUS + ((resp.getStatusCode() == 0) ? Http.SC_OK : resp.getStatusCode()) + "\r\n\r\n"));
-                if (resp.getHeaders().size() != 0){
-                    for (Map.Entry e : resp.getHeaders().entrySet()) {
-                        pw.write(e.getKey() + ": " + e.getValue() + "\r\n");
-                    }
-                    pw.write ("\r\n\r\n");
-                }
-                pw.write(resp.byteOut.toString());
-                pw.flush();
+                sendResponse (resp);
             }
             catch (Exception e) {
                 if (LOG.isDebugEnabled())
@@ -169,6 +156,30 @@ public class Server implements Closeable {
         else
             respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not found"),
                     sock.getOutputStream());
+    }
+
+    private void sendResponse (Response resp){
+        try {
+            if (resp.getHeaders().get(CONTENT_LENGTH) == null){
+                resp.setContentLength(resp.byteOut.size());
+            }
+            if (resp.getStatusCode() == 0){
+                resp.setStatusCode(Http.SC_OK);
+            }
+            Writer pw = new BufferedWriter(new OutputStreamWriter(resp.getOutputStream()));
+            pw.write((Http.OK_HEADER_PLUS + resp.getStatusCode() + CRLF + CRLF));
+            if (resp.getHeaders().size() != 0){
+                for (Map.Entry e : resp.getHeaders().entrySet()) {
+                    pw.write(e.getKey() + ": " + e.getValue() + CRLF);
+                }
+                pw.write (CRLF + CRLF);
+            }
+            pw.write(resp.byteOut.toString());
+            pw.flush();
+        }
+        catch (Exception e){
+            throw new ServerException("Fail to get output stream", e);
+        }
     }
 
     private Request parseRequest(Socket socket) throws IOException, URISyntaxException {
