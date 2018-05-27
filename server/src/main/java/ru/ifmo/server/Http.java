@@ -14,4 +14,5 @@ public class Http {
 
     /** OK header that preceded rest response data. */
     public static final String OK_HEADER = "HTTP/1.0 200 OK\r\n\r\n";
+    public static final String OK_HEADER_PLUS = "HTTP/1.0 ";
 }

@@ -1,5 +1,7 @@
 package ru.ifmo.server;
 
+import ru.ifmo.server.util.Utils;
+
 import java.io.*;
 import java.net.Socket;
 import java.util.HashMap;
@@ -15,10 +17,13 @@ public class Response {
     private byte[] body;
     private Map<String, String> headers = new HashMap<>();
     private boolean getWR = false;
+    ByteArrayOutputStream byteOut;
 
+    Response(Socket socket) {
+        this.socket = socket;
+    }
     public void setContentType (String s){
         headers.put("Content-Type", s);
-//        contentType = s;
     }
     public void setContentLength(long l){
         headers.put("Content-Length", String.valueOf(l));
@@ -36,10 +41,11 @@ public class Response {
     public void setHeader(String k, String v){
         headers.put(k,v);
     }
-    ByteArrayOutputStream bout = new ByteArrayOutputStream();
-
-    Response(Socket socket) {
-        this.socket = socket;
+    public Map<String, String> getHeaders (){
+        return headers;
+    }
+    public int getStatusCode (){
+        return statusCode;
     }
 
     /**
@@ -50,28 +56,14 @@ public class Response {
             return socket.getOutputStream();
         }
         catch (IOException e) {
-            throw new ServerException("Cannot get output stream", e);
+            Utils.closeQuiet(socket);
+            throw new ServerException("Cannot get outputstream", e);
         }
-//        return bout;
+//        return byteOut;
     }
-
-
-    public Writer getWriter() throws IOException {
-        Writer pw = new OutputStreamWriter(socket.getOutputStream());
-        if (!getWR){
-            getWR = true;
-            pw.write(Http.OK_HEADER_PLUS + ((statusCode == 0) ? Http.SC_OK : statusCode) + "\r\n\r\n");
-            if (headers.size() != 0){
-                for (Map.Entry e : headers.entrySet()) {
-                    pw.write(e.getKey() + ": " + e.getValue() + "\r\n");
-                }
-            }
-            pw.write ("\r\n\r\n");
-            if (body != null) {
-                pw.write(new String(body) + "\r\n");
-            }
-        }
-        return pw;
+    public Writer getWriter(){
+        byteOut = new ByteArrayOutputStream();
+        return new OutputStreamWriter(byteOut);
     }
 }
 

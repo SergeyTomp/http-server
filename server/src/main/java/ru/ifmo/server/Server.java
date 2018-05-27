@@ -4,14 +4,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ifmo.server.util.Utils;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -147,11 +145,23 @@ public class Server implements Closeable {
         if (handler != null) {
             try {
                 handler.handle(req, resp);
+//                byte[] body = resp.byteOut.toByteArray();
+//                resp.setContentLength(body.length);
+                resp.setContentLength(resp.byteOut.size());
+                Writer pw = new BufferedWriter(new OutputStreamWriter(resp.getOutputStream()));
+                pw.write((Http.OK_HEADER_PLUS + ((resp.getStatusCode() == 0) ? Http.SC_OK : resp.getStatusCode()) + "\r\n\r\n"));
+                if (resp.getHeaders().size() != 0){
+                    for (Map.Entry e : resp.getHeaders().entrySet()) {
+                        pw.write(e.getKey() + ": " + e.getValue() + "\r\n");
+                    }
+                    pw.write ("\r\n\r\n");
+                }
+                pw.write(resp.byteOut.toString());
+                pw.flush();
             }
             catch (Exception e) {
                 if (LOG.isDebugEnabled())
                     LOG.error("Server error:", e);
-
                 respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
                         sock.getOutputStream());
             }
@@ -261,12 +271,13 @@ public class Server implements Closeable {
      *
      * @throws IOException Should be never thrown.
      */
-    public void close() throws IOException {
+    public void close(){
         stop();
     }
 
     private boolean isMethodSupported(HttpMethod method) {
         return method == HttpMethod.GET;
+//        return true;
     }
 
     private class ConnectionHandler implements Runnable {
