@@ -16,7 +16,6 @@ public class Response {
     private int statusCode = 0;
     private byte[] body;
     private Map<String, String> headers = new HashMap<>();
-    private boolean getWR = false;
     ByteArrayOutputStream byteOut;
 
     Response(Socket socket) {
