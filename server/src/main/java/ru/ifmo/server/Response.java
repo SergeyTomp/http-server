@@ -18,6 +18,7 @@ public class Response {
     private Map<String, String> headers = new HashMap<>();
     ByteArrayOutputStream byteOut;
 
+    
     Response(Socket socket) {
         this.socket = socket;
     }
