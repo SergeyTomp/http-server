@@ -20,6 +20,7 @@ public class Request {
 
     Map<String, String> headers;
     Map<String, String> args;
+    String body;
 
     Request(Socket socket) {
         this.socket = socket;
@@ -56,6 +57,14 @@ public class Request {
             return Collections.emptyMap();
 
         return Collections.unmodifiableMap(headers);
+    }
+
+    void addBody(String content) {
+        body = content;
+    }
+
+    public String getBody(){
+        return this.body;
     }
 
     void addHeader(String key, String value) {

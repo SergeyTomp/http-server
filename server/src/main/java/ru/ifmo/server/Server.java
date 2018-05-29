@@ -4,10 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ifmo.server.util.Utils;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
@@ -173,6 +170,12 @@ public class Server implements Closeable {
                 parseHeader(req, sb);
             sb.setLength(0);
         }
+
+        if ((req.getMethod() == HttpMethod.POST || req.getMethod() == HttpMethod.PUT) && req.headers.get("Content-Type") != null && (
+                req.headers.get("Content-Type").contains("application/x-www-form-urlencoded")
+                || req.headers.get("Content-Type").contains("text/text"))) {
+            readBody(reader, sb, req);
+        }
         return req;
     }
 
@@ -221,6 +224,21 @@ public class Server implements Closeable {
         }
     }
 
+    private void parseBody(Request req, StringBuilder sb){
+        String key = null;
+        int len = sb.length();
+        int start = 0;
+
+        for (int i = 0; i < len; i++) {
+            if (sb.charAt(i) == LF) {
+                key = sb.substring(start, i).trim();
+                start = i + 1;
+                break;
+            }
+        }
+        req.addBody("123");
+    }
+
     private void parseHeader(Request req, StringBuilder sb) {
         String key = null;
         int len = sb.length();
@@ -252,6 +270,24 @@ public class Server implements Closeable {
         return count;
     }
 
+    private void readBody(InputStreamReader reader, StringBuilder sb, Request request) throws IOException {
+        int contentLength = Integer.parseInt(request.headers.get("Content-Length"));
+
+        char[] buf = new char[1024];
+        int len;
+        int count = 0;
+
+        while ((len = reader.read(buf)) > 0) {
+            sb.append(new String(buf, 0, len));
+
+            count += len;
+            if (count == contentLength)
+                break;
+        }
+
+        request.addBody(sb.toString());
+    }
+
     private void respond(int code, String statusMsg, String content, OutputStream out) throws IOException {
         out.write(("HTTP/1.0" + SPACE + code + SPACE + statusMsg + CRLF + CRLF + content).getBytes());
         out.flush();
@@ -266,7 +302,7 @@ public class Server implements Closeable {
     }
 
     private boolean isMethodSupported(HttpMethod method) {
-        return method == HttpMethod.GET;
+        return method == HttpMethod.GET || method == HttpMethod.POST || method == HttpMethod.HEAD || method == HttpMethod.PUT;
     }
 
     private class ConnectionHandler implements Runnable {
