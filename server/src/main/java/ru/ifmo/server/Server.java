@@ -224,21 +224,6 @@ public class Server implements Closeable {
         }
     }
 
-    private void parseBody(Request req, StringBuilder sb){
-        String key = null;
-        int len = sb.length();
-        int start = 0;
-
-        for (int i = 0; i < len; i++) {
-            if (sb.charAt(i) == LF) {
-                key = sb.substring(start, i).trim();
-                start = i + 1;
-                break;
-            }
-        }
-        req.addBody("123");
-    }
-
     private void parseHeader(Request req, StringBuilder sb) {
         String key = null;
         int len = sb.length();
