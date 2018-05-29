@@ -368,7 +368,20 @@ public class Server implements Closeable {
                 parseHeader(req, sb);
             sb.setLength(0);
         }
+
+        if (isPOSTorPUT(req)) {
+            readBody(reader, sb, req);
+            if (req.headers.get(CONTENT_TYPE).contains(URL_ENCODED)){
+                parseArgs(req, req.body);
+            }
+        }
         return req;
+    }
+
+    private boolean isPOSTorPUT(Request req) {
+        return (req.getMethod() == HttpMethod.POST || req.getMethod() == HttpMethod.PUT) && req.headers.get(CONTENT_TYPE) != null && (
+                req.headers.get(CONTENT_TYPE).contains(URL_ENCODED)
+                || req.headers.get(CONTENT_TYPE).contains(TEXT_PLAIN));
     }
 
     private void parseRequestLine(Request req, StringBuilder sb) throws URISyntaxException {
@@ -391,6 +404,11 @@ public class Server implements Closeable {
         assert req.path != null : "Request path can't be null";
 
         String query = req.path.getQuery();
+        parseArgs(req, query);
+    }
+
+    private void parseArgs(Request req, String query) {
+        int start;
         if (query != null) {
             start = 0;
             String key = null;
@@ -412,6 +430,21 @@ public class Server implements Closeable {
             if (key != null)
                 req.addArgument(key, null);
         }
+    }
+
+    private void parseBody(Request req, StringBuilder sb){
+        String key = null;
+        int len = sb.length();
+        int start = 0;
+
+        for (int i = 0; i < len; i++) {
+            if (sb.charAt(i) == LF) {
+                key = sb.substring(start, i).trim();
+                start = i + 1;
+                break;
+            }
+        }
+        req.addBody("123");
     }
 
     private void parseHeader(Request req, StringBuilder sb) {
@@ -453,6 +486,24 @@ public class Server implements Closeable {
         if (LOG.isTraceEnabled())
             LOG.trace("Read line: {}", sb.toString());
         return count;
+    }
+
+    private void readBody(InputStreamReader reader, StringBuilder sb, Request request) throws IOException {
+        int contentLength = Integer.parseInt(request.headers.get("Content-Length"));
+
+        char[] buf = new char[1024];
+        int len;
+        int count = 0;
+
+        while ((len = reader.read(buf)) > 0) {
+            sb.append(new String(buf, 0, len));
+
+            count += len;
+            if (count == contentLength)
+                break;
+        }
+
+        request.addBody(sb.toString());
     }
 
     private void respond(int code, String statusMsg, String content, OutputStream out) throws IOException {
@@ -502,7 +553,7 @@ public class Server implements Closeable {
     }
 
     private boolean isMethodSupported(HttpMethod method) {
-        return method == HttpMethod.GET;
+        return method == HttpMethod.GET || method == HttpMethod.POST || method == HttpMethod.HEAD || method == HttpMethod.PUT;
     }
 
     private class ConnectionHandler implements Runnable {
