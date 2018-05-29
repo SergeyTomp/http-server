@@ -78,6 +78,11 @@ public class SimpleExample {
                 sb.append("</p>");
             }
 
+            String body = request.getBody();
+            sb.append("<p><strong>Passed body:</strong><br>");
+            sb.append("Body: ").append(body);
+            sb.append("<br>");
+
             sb.append(" <iframe width=\"420\" height=\"315\"\n" +
                     "src=\"https://www.youtube.com/embed/dQw4w9WgXcQ\">\n" +
                     "</iframe> ");

@@ -27,6 +27,9 @@ public class Request {
     private Map<String, Cookie> cookieMap;
     private Session session;
     private final Map<String, Session> sessions;
+    Map<String, String> headers;
+    Map<String, String> args;
+    String body;
 
     Request(Socket socket, Map<String, Session> sessions) {
         this.socket = socket;
@@ -60,6 +63,15 @@ public class Request {
             return emptyMap();}
         return unmodifiableMap(headers);
     }
+
+    void addBody(String content) {
+        body = content;
+    }
+
+    public String getBody(){
+        return this.body;
+    }
+
     void addHeader(String key, String value) {
         if (headers == null){
             headers = new LinkedHashMap<>();}
