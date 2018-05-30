@@ -162,6 +162,7 @@ public class Server implements Closeable {
                 resp.printWriter.flush();
 
             if (resp.getHeaders().get(CONTENT_LENGTH) == null){
+                resp.getOutputStream();
                 resp.setContentLength(resp.byteOut.size());
             }
             if (resp.getStatusCode() == 0){
@@ -197,11 +198,11 @@ public class Server implements Closeable {
                 }
             }
             pw.write(CRLF);
-            pw.write(resp.byteOut.toString());
+            pw.write(resp.getOutputStream().toString());
             pw.flush();
 
-            out.write(resp.byteOut.toByteArray());
-            out.flush();
+//            out.write(resp.byteOut.toByteArray());
+//            out.flush();
         }
         catch (Exception e){
             throw new ServerException("Fail to get output stream", e);
@@ -282,12 +283,12 @@ public class Server implements Closeable {
         }
         req.addHeader(key, sb.substring(start, len).trim());
 
-        if (key.equals("Cookie")) {
+        if ("Cookie".equals(key)) {
             String[] pairs = sb.substring(start, len).trim().split("; ");
             for (int i = 0; i < pairs.length; i++) {
                 String pair = pairs[i];
                 String[] keyValue = pair.split("=");
-                req.setCookie(keyValue[0], keyValue[1]);
+                req.setCookie(keyValue[0], keyValue[1]); //new Cookie(keyValue[0], keyValue[1]);
                 System.out.println(keyValue[0] + keyValue[1]);
             }
         }

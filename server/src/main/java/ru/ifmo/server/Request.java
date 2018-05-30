@@ -21,7 +21,7 @@ public class Request {
 
     private Map<String, String> headers;
     private Map<String, String> args;
-    private Map<String, String> cookies;
+    private Map<String, String> cookies; //сделать Map string-Cookie
 
     Request(Socket socket) {
         this.socket = socket;
