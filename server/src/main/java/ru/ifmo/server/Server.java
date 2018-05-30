@@ -142,9 +142,7 @@ public class Server implements Closeable {
         if (handler != null) {
             try {
                 handler.handle(req, resp);
-//                byte[] body = resp.byteOut.toByteArray();
-//                resp.setContentLength(body.length);
-                sendResponse (resp);
+                sendResponse(resp);
             }
             catch (Exception e) {
                 if (LOG.isDebugEnabled())
@@ -158,24 +156,29 @@ public class Server implements Closeable {
                     sock.getOutputStream());
     }
 
-    private void sendResponse (Response resp){
+    private void sendResponse(Response resp){
         try {
+            if (resp.printWriter != null)
+                resp.printWriter.flush();
+
             if (resp.getHeaders().get(CONTENT_LENGTH) == null){
                 resp.setContentLength(resp.byteOut.size());
             }
             if (resp.getStatusCode() == 0){
                 resp.setStatusCode(Http.SC_OK);
             }
-            Writer pw = new BufferedWriter(new OutputStreamWriter(resp.getOutputStream()));
-            pw.write((Http.OK_HEADER_PLUS + resp.getStatusCode() + CRLF + CRLF));
-            if (resp.getHeaders().size() != 0){
-                for (Map.Entry e : resp.getHeaders().entrySet()) {
-                    pw.write(e.getKey() + ": " + e.getValue() + CRLF);
-                }
-                pw.write (CRLF + CRLF);
+
+            OutputStream out = resp.getSocketOutputStream();
+            Writer pw = new BufferedWriter(new OutputStreamWriter(out));
+            pw.write((Http.OK_HEADER_PLUS + resp.getStatusCode() + CRLF));
+            for (Map.Entry e : resp.getHeaders().entrySet()) {
+                pw.write(e.getKey() + ": " + e.getValue() + CRLF);
             }
-            pw.write(resp.byteOut.toString());
+            pw.write(CRLF);
             pw.flush();
+
+            out.write(resp.byteOut.toByteArray());
+            out.flush();
         }
         catch (Exception e){
             throw new ServerException("Fail to get output stream", e);
@@ -288,7 +291,6 @@ public class Server implements Closeable {
 
     private boolean isMethodSupported(HttpMethod method) {
         return method == HttpMethod.GET;
-//        return true;
     }
 
     private class ConnectionHandler implements Runnable {

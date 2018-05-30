@@ -4,11 +4,12 @@ import ru.ifmo.server.util.Utils;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static ru.ifmo.server.Http.*;
+import static java.util.Collections.unmodifiableMap;
+import static ru.ifmo.server.Http.CONTENT_LENGTH;
+import static ru.ifmo.server.Http.CONTENT_TYPE;
 
 /**
  * Provides {@link java.io.OutputStream} ro respond to client.
@@ -16,11 +17,10 @@ import static ru.ifmo.server.Http.*;
 public class Response {
 
     final Socket socket;
-    private int statusCode = 0;
-    private byte[] body;
+    private int statusCode;
     private Map<String, String> headers = new HashMap<>();
-    ByteArrayOutputStream byteOut;
-    private Writer printWriter;
+    final ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+    Writer printWriter;
 
 
     Response(Socket socket) {
@@ -34,13 +34,10 @@ public class Response {
     }
     public void setStatusCode (int c){
         if (c < Http.SC_CONTINUE || c > Http.SC_NOT_IMPLEMENTED)
-            throw new SecurityException("Not valid http status code:" + c);
+            throw new ServerException("Not valid http status code: " + c);
         statusCode = c;
     }
-    public void setBody (byte[] data){
-        setContentLength(data.length);
-        body = data;
-    }
+
     public void setHeaders (Map<String, String> h){
         headers.putAll(h);
     }
@@ -48,7 +45,7 @@ public class Response {
         headers.put(k,v);
     }
     public Map<String, String> getHeaders (){
-        return Collections.unmodifiableMap(headers);
+        return unmodifiableMap(headers);
     }
     public int getStatusCode (){
         return statusCode;
@@ -58,7 +55,7 @@ public class Response {
      * @return {@link OutputStream} connected to the client.
      */
     // OutputStream для Server для отправки сформированного ответа
-    public OutputStream getOutputStream() {
+    OutputStream getSocketOutputStream() {
         try {
             return socket.getOutputStream();
         }
@@ -66,11 +63,14 @@ public class Response {
             Utils.closeQuiet(socket);
             throw new ServerException("Cannot get outputstream", e);
         }
-//        return byteOut;
     }
+
+    public OutputStream getOutputStream() {
+        return byteOut;
+    }
+
     // Writer для редактирования handler.handle, там через него пишем в тело ответа.
     public Writer getWriter(){
-        byteOut = new ByteArrayOutputStream();
         if (printWriter == null){
             printWriter = new OutputStreamWriter(byteOut);
         }
