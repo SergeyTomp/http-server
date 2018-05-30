@@ -174,7 +174,30 @@ public class Server implements Closeable {
             for (Map.Entry e : resp.getHeaders().entrySet()) {
                 pw.write(e.getKey() + ": " + e.getValue() + CRLF);
             }
+            if (resp.cookieList != null) {
+
+                for (Cookie cookie : resp.cookieList) {
+                    StringBuilder cookieLine = new StringBuilder();
+                    cookieLine.append(cookie.getKey());
+                    cookieLine.append("=");
+                    cookieLine.append(cookie.getValue());
+                    if (cookie.getMaxAge() != 0) {
+                        cookieLine.append(";Max-Age=");
+                        cookieLine.append(cookie.getMaxAge());
+                    }
+                    if (cookie.getDomain() != null) {
+                        cookieLine.append(";DOMAIN=");
+                        cookieLine.append(cookie.getDomain());
+                    }
+                    if (cookie.getPath() != null) {
+                        cookieLine.append(";PATH=");
+                        cookieLine.append(cookie.getPath());
+                    }
+                    pw.write("Set-Cookie:" + SPACE + cookieLine.toString() + CRLF);
+                }
+            }
             pw.write(CRLF);
+            pw.write(resp.byteOut.toString());
             pw.flush();
 
             out.write(resp.byteOut.toByteArray());
@@ -188,7 +211,7 @@ public class Server implements Closeable {
     private Request parseRequest(Socket socket) throws IOException, URISyntaxException {
         InputStreamReader reader = new InputStreamReader(socket.getInputStream());
         Request req = new Request(socket);
-        StringBuilder sb = new StringBuilder(READER_BUF_SIZE); // TODO
+        StringBuilder sb = new StringBuilder(READER_BUF_SIZE);
 
         while (readLine(reader, sb) > 0) {
             if (req.method == null)
@@ -258,6 +281,16 @@ public class Server implements Closeable {
             }
         }
         req.addHeader(key, sb.substring(start, len).trim());
+
+        if (key.equals("Cookie")) {
+            String[] pairs = sb.substring(start, len).trim().split("; ");
+            for (int i = 0; i < pairs.length; i++) {
+                String pair = pairs[i];
+                String[] keyValue = pair.split("=");
+                req.setCookie(keyValue[0], keyValue[1]);
+                System.out.println(keyValue[0] + keyValue[1]);
+            }
+        }
     }
 
     private int readLine(InputStreamReader in, StringBuilder sb) throws IOException {
