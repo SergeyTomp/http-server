@@ -10,6 +10,7 @@ import java.util.Map;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
+import static ru.ifmo.server.Session.SESSION_COOKIENAME;
 
 /**
  * Keeps request information: method, headers, params
@@ -24,12 +25,13 @@ public class Request {
     private Map<String, String> headers;
     private Map<String, String> args;
     private Map<String, Cookie> cookieMap;
-
+    private Session session;
 
     Request(Socket socket) {
         this.socket = socket;
 
     }
+
     /**
      * @return {@link InputStream} connected to the client.
      */
@@ -89,6 +91,30 @@ public class Request {
     }
     public String getCookieValue(String key) {
         return cookieMap.get(key).getValue();
+    }
+
+    private boolean containsJSIDCookie() {
+        return getCookies().containsKey(SESSION_COOKIENAME);
+    }
+
+    public Session getSession() {
+        if (session == null) {
+            session = getSession(false);
+        }
+        return session;
+    }
+
+    public Session getSession(boolean create) {
+        if (!containsJSIDCookie() || create) {
+            session = new Session();
+            Server.setSessions(session.getId(), session);
+        } else {
+            session = Server.getSessions().get(getCookieValue(SESSION_COOKIENAME));
+            if (session == null) {
+                session = getSession(true);
+            }
+        }
+        return session;
     }
     @Override
     public String toString() {

@@ -10,11 +10,13 @@ import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static ru.ifmo.server.util.Utils.htmlMessage;
 import static ru.ifmo.server.Http.*;
+import static ru.ifmo.server.Session.SESSION_COOKIENAME;
+import static ru.ifmo.server.util.Utils.htmlMessage;
 
 /**
  * Ifmo Web Server.
@@ -56,11 +58,32 @@ public class Server implements Closeable {
     private ServerSocket socket;
     private ExecutorService acceptorPool;
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
+    private ExecutorService connectionProcessingPool;
+    private Thread lisThread;
+    private static Map<String, Session> sessions = new ConcurrentHashMap<>();
 
     private Server(ServerConfig config) {
         this.config = new ServerConfig(config);
     }
+    static Map<String, Session> getSessions() {
+        return sessions;
+    }
 
+    static void setSessions(String key, Session session) {
+        Server.sessions.put(key, session);
+    }
+
+    static void removeSession(String key) {
+        Server.sessions.remove(key);
+    }
+
+    private void listenSessions(){
+        SessionListener sessionListener = new SessionListener();
+        lisThread = new Thread(sessionListener);
+        lisThread.start();
+
+        LOG.info("Session listener started, deleting by timeout.");
+    }
     /**
      * Starts server according to config. If null passed
      * defaults will be used.
@@ -81,6 +104,7 @@ public class Server implements Closeable {
             server.openConnection();
             server.startAcceptor();
             LOG.info("Server started on port: {}", config.getPort());
+            server.listenSessions();
             return server;
         }
         catch (IOException e) {
@@ -101,6 +125,8 @@ public class Server implements Closeable {
      */
     public void stop() {
         acceptorPool.shutdownNow();
+        connectionProcessingPool.shutdownNow();
+        lisThread.interrupt();
         Utils.closeQuiet(socket);
         socket = null;
     }
@@ -142,7 +168,7 @@ public class Server implements Closeable {
         if (handler != null) {
             try {
                 handler.handle(req, resp);
-                sendResponse(resp);
+                sendResponse(resp, req);
             }
             catch (Exception e) {
                 if (LOG.isDebugEnabled())
@@ -156,7 +182,7 @@ public class Server implements Closeable {
                     sock.getOutputStream());
     }
 
-    private void sendResponse(Response resp){
+    private void sendResponse(Response resp, Request req){
         try {
             if (resp.printWriter != null)
                 resp.printWriter.flush();
@@ -175,6 +201,11 @@ public class Server implements Closeable {
             for (Map.Entry e : resp.getHeaders().entrySet()) {
                 pw.write(e.getKey() + ": " + e.getValue() + CRLF);
             }
+
+            if (req.getSession() != null) {
+                resp.addCookie(new Cookie(SESSION_COOKIENAME, req.getSession().getId()));
+            }
+
 
             for(String str : resp.cookieMap.keySet()){
                 StringBuilder cookieLine = new StringBuilder();
