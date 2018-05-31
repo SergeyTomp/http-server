@@ -4,10 +4,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
 import java.net.URI;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.unmodifiableMap;
 
 /**
  * Keeps request information: method, headers, params
@@ -21,7 +23,8 @@ public class Request {
 
     private Map<String, String> headers;
     private Map<String, String> args;
-    private Map<String, String> cookies; //сделать Map string-Cookie
+    private Map<String, Cookie> cookieMap;
+
 
     Request(Socket socket) {
         this.socket = socket;
@@ -51,8 +54,8 @@ public class Request {
     }
     public Map<String, String> getHeaders() {
         if (headers == null){
-            return Collections.emptyMap();}
-        return Collections.unmodifiableMap(headers);
+            return emptyMap();}
+        return unmodifiableMap(headers);
     }
     void addHeader(String key, String value) {
         if (headers == null){
@@ -69,23 +72,23 @@ public class Request {
      */
     public Map<String, String> getArguments() {
         if (args == null)
-            return Collections.emptyMap();
-        return Collections.unmodifiableMap(args);
+            return emptyMap();
+        return unmodifiableMap(args);
     }
-    void setCookie(String name, String value) {
-        if (cookies == null) {
-            cookies = new HashMap<>();
+    void mapCookie(String name, Cookie cookie) {
+        if (cookieMap == null){
+            cookieMap = new HashMap<>();
         }
-        cookies.put(name, value);
+        cookieMap.put(name, cookie);
     }
-    public Map<String, String> getCookies() {
+    public Map<String, Cookie> getCookies() {
         if (getHeaders().get("Cookie") == null) {
-            return Collections.emptyMap();
+            return emptyMap();
         }
-        return Collections.unmodifiableMap(cookies);
+        return unmodifiableMap(cookieMap);
     }
     public String getCookieValue(String key) {
-        return cookies.get(key);
+        return cookieMap.get(key).getValue();
     }
     @Override
     public String toString() {
