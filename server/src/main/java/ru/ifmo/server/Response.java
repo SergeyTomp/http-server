@@ -7,7 +7,6 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.unmodifiableMap;
 import static ru.ifmo.server.Http.CONTENT_LENGTH;
 import static ru.ifmo.server.Http.CONTENT_TYPE;
 
@@ -18,8 +17,8 @@ public class Response {
 
     final Socket socket;
     private int statusCode;
-    private Map<String, String> headers = new HashMap<>();
-    final ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+    private Map<String, String> headers;
+    ByteArrayOutputStream byteOut;
     Writer printWriter;
 
 
@@ -39,13 +38,20 @@ public class Response {
     }
 
     public void setHeaders (Map<String, String> h){
+        if(headers == null){
+            headers = new HashMap<>();
+        }
         headers.putAll(h);
     }
-    public void setHeader(String k, String v){
-        headers.put(k,v);
+    public void setHeader(String k, String v) {
+        if(headers == null){
+            headers = new HashMap<>();}
+        headers.put(k, v);
     }
-    public Map<String, String> getHeaders (){
-        return unmodifiableMap(headers);
+    public Map<String, String> getHeaders() {
+        if(headers == null){
+            headers = new HashMap<>();}
+        return headers;
     }
     public int getStatusCode (){
         return statusCode;
@@ -58,20 +64,25 @@ public class Response {
     OutputStream getSocketOutputStream() {
         try {
             return socket.getOutputStream();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             Utils.closeQuiet(socket);
             throw new ServerException("Cannot get outputstream", e);
         }
     }
 
     public OutputStream getOutputStream() {
+        if (byteOut == null){
+            byteOut = new ByteArrayOutputStream();
+        }
         return byteOut;
     }
 
     // Writer для редактирования handler.handle, там через него пишем в тело ответа.
-    public Writer getWriter(){
-        if (printWriter == null){
+    public Writer getWriter() {
+        if (printWriter == null) {
+            if(byteOut == null){
+                byteOut = new ByteArrayOutputStream();
+            }
             printWriter = new OutputStreamWriter(byteOut);
         }
         return printWriter;
