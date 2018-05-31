@@ -175,28 +175,65 @@ public class Server implements Closeable {
             for (Map.Entry e : resp.getHeaders().entrySet()) {
                 pw.write(e.getKey() + ": " + e.getValue() + CRLF);
             }
-            if (resp.cookieList != null) {
 
-                for (Cookie cookie : resp.cookieList) {
-                    StringBuilder cookieLine = new StringBuilder();
-                    cookieLine.append(cookie.getKey());
-                    cookieLine.append("=");
-                    cookieLine.append(cookie.getValue());
-                    if (cookie.getMaxAge() != 0) {
-                        cookieLine.append(";Max-Age=");
-                        cookieLine.append(cookie.getMaxAge());
-                    }
-                    if (cookie.getDomain() != null) {
-                        cookieLine.append(";DOMAIN=");
-                        cookieLine.append(cookie.getDomain());
-                    }
-                    if (cookie.getPath() != null) {
-                        cookieLine.append(";PATH=");
-                        cookieLine.append(cookie.getPath());
-                    }
-                    pw.write("Set-Cookie:" + SPACE + cookieLine.toString() + CRLF);
+            for(String str : resp.cookieMap.keySet()){
+                StringBuilder cookieLine = new StringBuilder();
+                cookieLine.append(str).append("=").append(resp.cookieMap.get(str).getValue());
+                if (resp.cookieMap.get(str).getMaxAge() != 0){
+                    cookieLine.append(";Max-Age=").append(resp.cookieMap.get(str).getMaxAge());
                 }
+                if (resp.cookieMap.get(str).getDomain() != null){
+                    cookieLine.append(";DOMAIN=").append(resp.cookieMap.get(str).getDomain());
+                }
+                if (resp.cookieMap.get(str).getPath() != null){
+                    cookieLine.append(";PATH=").append(resp.cookieMap.get(str).getPath());
+                }
+                pw.write("Set-Cookie:" + SPACE + cookieLine.toString() + CRLF);
             }
+
+//            for(Map.Entry entry : resp.cookieMap.entrySet()){
+//            StringBuilder cookieLine = new StringBuilder();
+//                cookieLine.append(entry.getKey());
+//                cookieLine.append(entry.getValue().)
+//            }
+
+//            if (resp.cookieMap != null){
+//                resp.cookieMap.forEach((String key, Cookie val) -> {
+//                    StringBuilder cookieLine = new StringBuilder();
+//                    cookieLine.append(key).append("=").append(val.getValue());
+//                    if (val.getMaxAge() != 0){
+//                        cookieLine.append(";Max-Age=").append(val.getMaxAge());}
+//                    if (val.getDomain() != null) {
+//                        cookieLine.append(";DOMAIN=").append(val.getDomain());}
+//                    if (val.getPath() != null) {
+//                        cookieLine.append(";PATH=").append(val.getPath());
+//                    }
+//                    pw.write("Set-Cookie:" + SPACE + cookieLine.toString() + CRLF);
+//                });
+//            }
+
+//            if (resp.cookieList != null) {
+//
+//                for (Cookie cookie : resp.cookieList) {
+//                    StringBuilder cookieLine = new StringBuilder();
+//                    cookieLine.append(cookie.getKey());
+//                    cookieLine.append("=");
+//                    cookieLine.append(cookie.getValue());
+//                    if (cookie.getMaxAge() != 0) {
+//                        cookieLine.append(";Max-Age=");
+//                        cookieLine.append(cookie.getMaxAge());
+//                    }
+//                    if (cookie.getDomain() != null) {
+//                        cookieLine.append(";DOMAIN=");
+//                        cookieLine.append(cookie.getDomain());
+//                    }
+//                    if (cookie.getPath() != null) {
+//                        cookieLine.append(";PATH=");
+//                        cookieLine.append(cookie.getPath());
+//                    }
+//                    pw.write("Set-Cookie:" + SPACE + cookieLine.toString() + CRLF);
+//                }
+//            }
             pw.write(CRLF);
             pw.write(resp.getOutputStream().toString());
             pw.flush();
@@ -288,8 +325,8 @@ public class Server implements Closeable {
             for (int i = 0; i < pairs.length; i++) {
                 String pair = pairs[i];
                 String[] keyValue = pair.split("=");
-                req.setCookie(keyValue[0], keyValue[1]); //new Cookie(keyValue[0], keyValue[1]);
-                System.out.println(keyValue[0] + keyValue[1]);
+//                req.setCookie(keyValue[0], keyValue[1]);
+                req.mapCookie(keyValue[0], new Cookie(keyValue[0], keyValue[1]));
             }
         }
     }

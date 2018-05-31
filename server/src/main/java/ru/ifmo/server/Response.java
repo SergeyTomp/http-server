@@ -5,7 +5,6 @@ import ru.ifmo.server.util.Utils;
 import java.io.*;
 import java.net.Socket;
 import java.util.*;
-
 import static ru.ifmo.server.Http.CONTENT_LENGTH;
 import static ru.ifmo.server.Http.CONTENT_TYPE;
 
@@ -18,17 +17,18 @@ public class Response {
     private int statusCode;
     private Map<String, String> headers;
     ByteArrayOutputStream byteOut;
-    protected List<Cookie> cookieList;
+    Map <String, Cookie> cookieMap;
+
     Writer printWriter;
 
     Response(Socket socket) {
         this.socket = socket;
     }
     public void addCookie(Cookie cookie) {
-        if (cookieList == null) {
-            cookieList = new ArrayList<>();
+        if (cookieMap == null){
+            cookieMap = new HashMap<>();
         }
-        cookieList.add(cookie);
+        cookieMap.put(cookie.getKey(), cookie);
     }
     public void setContentType(String s) {
         headers.put(CONTENT_TYPE, s);
@@ -41,17 +41,16 @@ public class Response {
             throw new ServerException("Not valid http status code: " + c);
         statusCode = c;
     }
-
     public void setHeaders (Map<String, String> h){
         if(headers == null){
             headers = new HashMap<>();
         }
         headers.putAll(h);
     }
-    public void setHeader(String k, String v) {
+    public void setHeader(String key, String val) {
         if(headers == null){
             headers = new HashMap<>();}
-        headers.put(k, v);
+        headers.put(key, val);
     }
     public Map<String, String> getHeaders() {
         if(headers == null){
@@ -73,14 +72,12 @@ public class Response {
             throw new ServerException("Cannot get outputstream", e);
         }
     }
-
     public OutputStream getOutputStream() {
         if (byteOut == null){
             byteOut = new ByteArrayOutputStream();
         }
         return byteOut;
     }
-
     // Writer для редактирования handler.handle, там через него пишем в тело ответа.
     public Writer getWriter() {
         if (printWriter == null) {
