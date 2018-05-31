@@ -21,7 +21,6 @@ public class Response {
     protected List<Cookie> cookieList;
     Writer printWriter;
 
-
     Response(Socket socket) {
         this.socket = socket;
     }
