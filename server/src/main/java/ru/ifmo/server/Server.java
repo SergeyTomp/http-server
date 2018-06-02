@@ -21,11 +21,11 @@ import static ru.ifmo.server.util.Utils.htmlMessage;
 /**
  * Ifmo Web Server.
  * <p>
- *     To start server use {@link #start(ServerConfig)} and register at least
- *     one handler to process HTTP requests.
- *     Usage example:
- *     <pre>
- *{@code
+ * To start server use {@link #start(ServerConfig)} and register at least
+ * one handler to process HTTP requests.
+ * Usage example:
+ * <pre>
+ * {@code
  * ServerConfig config = new ServerConfig()
  *      .addHandler("/index", new Handler() {
  *          public void handle(Request request, Response response) throws Exception {
@@ -40,8 +40,9 @@ import static ru.ifmo.server.util.Utils.htmlMessage;
  *     </pre>
  * </p>
  * <p>
- *     To stop the server use {@link #stop()} or {@link #close()} methods.
+ * To stop the server use {@link #stop()} or {@link #close()} methods.
  * </p>
+ *
  * @see ServerConfig
  */
 public class Server implements Closeable {
@@ -65,6 +66,7 @@ public class Server implements Closeable {
     private Server(ServerConfig config) {
         this.config = new ServerConfig(config);
     }
+
     static Map<String, Session> getSessions() {
         return sessions;
     }
@@ -77,13 +79,14 @@ public class Server implements Closeable {
         Server.sessions.remove(key);
     }
 
-    private void listenSessions(){
-        SessionListener sessionListener = new SessionListener();
+    private void listenSessions() {
+        SessionKiller sessionListener = new SessionKiller();
         lisThread = new Thread(sessionListener);
         lisThread.start();
 
-        LOG.info("Session listener started, deleting by timeout.");
+        LOG.info("Session listener started, session will be deleted by timeout.");
     }
+
     /**
      * Starts server according to config. If null passed
      * defaults will be used.
@@ -106,8 +109,7 @@ public class Server implements Closeable {
             LOG.info("Server started on port: {}", config.getPort());
             server.listenSessions();
             return server;
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new ServerException("Cannot start server on port: " + config.getPort());
         }
     }
@@ -120,6 +122,7 @@ public class Server implements Closeable {
         acceptorPool = Executors.newSingleThreadExecutor(new ServerThreadFactory("con-acceptor"));
         acceptorPool.submit(new ConnectionHandler());
     }
+
     /**
      * Stops the server.
      */
@@ -141,15 +144,13 @@ public class Server implements Closeable {
 
             if (LOG.isDebugEnabled())
                 LOG.debug("Parsed request: {}", req);
-        }
-        catch (URISyntaxException e) {
+        } catch (URISyntaxException e) {
             if (LOG.isDebugEnabled())
                 LOG.error("Malformed URL", e);
             respond(SC_BAD_REQUEST, "Malformed URL", htmlMessage(SC_BAD_REQUEST + " Malformed URL"),
                     sock.getOutputStream());
             return;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOG.error("Error parsing request", e);
             respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
                     sock.getOutputStream());
@@ -169,29 +170,27 @@ public class Server implements Closeable {
             try {
                 handler.handle(req, resp);
                 sendResponse(resp, req);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 if (LOG.isDebugEnabled())
                     LOG.error("Server error:", e);
                 respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
                         sock.getOutputStream());
             }
-        }
-        else
+        } else
             respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not found"),
                     sock.getOutputStream());
     }
 
-    private void sendResponse(Response resp, Request req){
+    private void sendResponse(Response resp, Request req) {
         try {
             if (resp.printWriter != null)
                 resp.printWriter.flush();
 
-            if (resp.getHeaders().get(CONTENT_LENGTH) == null){
+            if (resp.getHeaders().get(CONTENT_LENGTH) == null) {
                 resp.getOutputStream();
                 resp.setContentLength(resp.byteOut.size());
             }
-            if (resp.getStatusCode() == 0){
+            if (resp.getStatusCode() == 0) {
                 resp.setStatusCode(Http.SC_OK);
             }
 
@@ -206,43 +205,20 @@ public class Server implements Closeable {
                 resp.addCookie(new Cookie(SESSION_COOKIENAME, req.getSession().getId()));
             }
 
-
-            for(String str : resp.cookieMap.keySet()){
+            for (Map.Entry<String, Cookie> entry : resp.cookieMap.entrySet()) {
                 StringBuilder cookieLine = new StringBuilder();
-                cookieLine.append(str).append("=").append(resp.cookieMap.get(str).getValue());
-                if (resp.cookieMap.get(str).getMaxAge() != 0){
-                    cookieLine.append(";Max-Age=").append(resp.cookieMap.get(str).getMaxAge());
+                cookieLine.append(entry.getKey()).append("=").append(entry.getValue().getValue());
+                if (entry.getValue().getMaxAge() != 0) {
+                    cookieLine.append(";Max-Age=").append(entry.getValue().getMaxAge());
                 }
-                if (resp.cookieMap.get(str).getDomain() != null){
-                    cookieLine.append(";DOMAIN=").append(resp.cookieMap.get(str).getDomain());
+                if (entry.getValue().getDomain() != null) {
+                    cookieLine.append(";DOMAIN=").append(entry.getValue().getDomain());
                 }
-                if (resp.cookieMap.get(str).getPath() != null){
-                    cookieLine.append(";PATH=").append(resp.cookieMap.get(str).getPath());
+                if (entry.getValue().getPath() != null) {
+                    cookieLine.append(";PATH=").append(entry.getValue().getPath());
                 }
                 pw.write("Set-Cookie:" + SPACE + cookieLine.toString() + CRLF);
             }
-
-//            for(Map.Entry entry : resp.cookieMap.entrySet()){
-//            StringBuilder cookieLine = new StringBuilder();
-//                cookieLine.append(entry.getKey());
-//                cookieLine.append(entry.getValue().)
-//            }
-
-//            if (resp.cookieMap != null){
-//                resp.cookieMap.forEach((String key, Cookie val) -> {
-//                    StringBuilder cookieLine = new StringBuilder();
-//                    cookieLine.append(key).append("=").append(val.getValue());
-//                    if (val.getMaxAge() != 0){
-//                        cookieLine.append(";Max-Age=").append(val.getMaxAge());}
-//                    if (val.getDomain() != null) {
-//                        cookieLine.append(";DOMAIN=").append(val.getDomain());}
-//                    if (val.getPath() != null) {
-//                        cookieLine.append(";PATH=").append(val.getPath());
-//                    }
-//                    pw.write("Set-Cookie:" + SPACE + cookieLine.toString() + CRLF);
-//                });
-//            }
-
 //            if (resp.cookieList != null) {
 //
 //                for (Cookie cookie : resp.cookieList) {
@@ -268,11 +244,9 @@ public class Server implements Closeable {
             pw.write(CRLF);
             pw.write(resp.getOutputStream().toString());
             pw.flush();
-
 //            out.write(resp.byteOut.toByteArray());
 //            out.flush();
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             throw new ServerException("Fail to get output stream", e);
         }
     }
@@ -323,8 +297,7 @@ public class Server implements Closeable {
                     key = query.substring(start, i);
 
                     start = i + 1;
-                }
-                else if (key != null && (query.charAt(i) == AMP || last)) {
+                } else if (key != null && (query.charAt(i) == AMP || last)) {
                     req.addArgument(key, query.substring(start, last ? i + 1 : i));
 
                     key = null;
@@ -356,7 +329,6 @@ public class Server implements Closeable {
             for (int i = 0; i < pairs.length; i++) {
                 String pair = pairs[i];
                 String[] keyValue = pair.split("=");
-//                req.setCookie(keyValue[0], keyValue[1]);
                 req.mapCookie(keyValue[0], new Cookie(keyValue[0], keyValue[1]));
             }
         }
@@ -382,12 +354,13 @@ public class Server implements Closeable {
         out.write(("HTTP/1.0" + SPACE + code + SPACE + statusMsg + CRLF + CRLF + content).getBytes());
         out.flush();
     }
+
     /**
      * Invokes {@link #stop()}. Usable in try-with-resources.
      *
      * @throws IOException Should be never thrown.
      */
-    public void close(){
+    public void close() {
         stop();
     }
 
@@ -401,8 +374,7 @@ public class Server implements Closeable {
                 try (Socket sock = socket.accept()) {
                     sock.setSoTimeout(config.getSocketTimeout());
                     processConnection(sock);
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     if (!Thread.currentThread().isInterrupted())
                         LOG.error("Error accepting connection", e);
                 }

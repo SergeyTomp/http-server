@@ -93,26 +93,23 @@ public class Request {
         return cookieMap.get(key).getValue();
     }
 
-    private boolean containsJSIDCookie() {
-        return getCookies().containsKey(SESSION_COOKIENAME);
-    }
-
     public Session getSession() {
         if (session == null) {
-            session = getSession(false);
+            session = getSession(false); //сначала проверим, нет ли в cookie id открытой сессии
         }
         return session;
     }
-
-    public Session getSession(boolean create) {
-        if (!containsJSIDCookie() || create) {
+    // рекурсивно создаём сессию если не найдена в Map sessions на сервере, (чтобы не задваивать блок создания)
+    public Session getSession(boolean open) {
+        if (!getCookies().containsKey(SESSION_COOKIENAME) || open) {
             session = new Session();
             Server.setSessions(session.getId(), session);
         } else {
-            session = Server.getSessions().get(getCookieValue(SESSION_COOKIENAME));
+            session = Server.getSessions().get(getCookieValue(SESSION_COOKIENAME)); //проверим, точно ли ещё есть на сервере
             if (session == null) {
                 session = getSession(true);
             }
+            session.setExpire(1); //продлим сессию, если она есть
         }
         return session;
     }
