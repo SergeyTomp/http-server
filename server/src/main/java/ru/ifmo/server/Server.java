@@ -59,8 +59,7 @@ public class Server implements Closeable {
     private ServerSocket socket;
     private ExecutorService acceptorPool;
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
-    private ExecutorService connectionProcessingPool;
-    private Thread lisThread;
+    private Thread killSess;
     private static Map<String, Session> sessions = new ConcurrentHashMap<>();
 
     private Server(ServerConfig config) {
@@ -79,10 +78,10 @@ public class Server implements Closeable {
         Server.sessions.remove(key);
     }
 
-    private void listenSessions() {
-        SessionKiller sessionListener = new SessionKiller();
-        lisThread = new Thread(sessionListener);
-        lisThread.start();
+    private void startSessionKiller() {
+        SessionKiller sessionKiller = new SessionKiller();
+        killSess = new Thread(sessionKiller);
+        killSess.start();
 
         LOG.info("Session listener started, session will be deleted by timeout.");
     }
@@ -107,7 +106,7 @@ public class Server implements Closeable {
             server.openConnection();
             server.startAcceptor();
             LOG.info("Server started on port: {}", config.getPort());
-            server.listenSessions();
+            server.startSessionKiller();
             return server;
         } catch (IOException e) {
             throw new ServerException("Cannot start server on port: " + config.getPort());
@@ -128,8 +127,7 @@ public class Server implements Closeable {
      */
     public void stop() {
         acceptorPool.shutdownNow();
-        connectionProcessingPool.shutdownNow();
-        lisThread.interrupt();
+        killSess.interrupt();
         Utils.closeQuiet(socket);
         socket = null;
     }
