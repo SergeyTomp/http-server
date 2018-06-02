@@ -79,9 +79,9 @@ public class Server implements Closeable {
         Server.sessions.remove(key);
     }
 
-    private void listenSessions() {
-        SessionKiller sessionListener = new SessionKiller();
-        killSess = new Thread(sessionListener);
+    private void startSessionKiller() {
+        SessionKiller sessionKiller = new SessionKiller();
+        killSess = new Thread(sessionKiller);
         killSess.start();
 
         LOG.info("Session listener started, session will be deleted by timeout.");
@@ -107,7 +107,7 @@ public class Server implements Closeable {
             server.openConnection();
             server.startAcceptor();
             LOG.info("Server started on port: {}", config.getPort());
-            server.listenSessions();
+            server.startSessionKiller();
             return server;
         } catch (IOException e) {
             throw new ServerException("Cannot start server on port: " + config.getPort());
@@ -367,13 +367,15 @@ public class Server implements Closeable {
     private boolean isMethodSupported(HttpMethod method) {
         return method == HttpMethod.GET;
     }
-//
+
 //    private class ConnectionHandler implements Runnable {
+//
 //        public void run() {
+//            connectionProcessingPool = Executors.newCachedThreadPool();
 //            while (!Thread.currentThread().isInterrupted()) {
 //                try (Socket sock = socket.accept()) {
 //                    sock.setSoTimeout(config.getSocketTimeout());
-//                    processConnection(sock);
+//                    connectionProcessingPool.submit(new NewConnection(sock));
 //                } catch (Exception e) {
 //                    if (!Thread.currentThread().isInterrupted())
 //                        LOG.error("Error accepting connection", e);
@@ -400,11 +402,9 @@ public class Server implements Closeable {
 
     private class NewConnection implements Runnable {
         Socket sock;
-
         NewConnection(Socket sock) {
             this.sock = sock;
         }
-
         @Override
         public void run() {
 
