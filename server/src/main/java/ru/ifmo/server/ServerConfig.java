@@ -1,7 +1,6 @@
 package ru.ifmo.server;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Holds server configs: local port, handler mappings, etc.
@@ -13,9 +12,11 @@ public class ServerConfig {
     private int port = DFLT_PORT;
     private Map<String, Handler> handlers;
     private int socketTimeout;
+    private Collection<Class<?>> classes;
 
     public ServerConfig() {
         handlers = new HashMap<>();
+        classes = new HashSet<>();
     }
 
     public ServerConfig(ServerConfig config) {
@@ -24,6 +25,7 @@ public class ServerConfig {
         port = config.port;
         handlers = new HashMap<>(config.handlers);
         socketTimeout = config.socketTimeout;
+        classes = new HashSet<>(config.classes);
     }
 
     /**
@@ -107,6 +109,20 @@ public class ServerConfig {
         this.socketTimeout = socketTimeout;
 
         return this;
+    }
+
+    public ServerConfig addClasses(Collection<Class<?>> classes) {
+        this.classes.addAll(classes);
+
+        return this;
+    }
+
+    public void addClass(Class<?> cls) {
+        this.classes.add(cls);
+    }
+
+    public Collection<Class<?>> getClasses() {
+        return classes;
     }
 
     @Override

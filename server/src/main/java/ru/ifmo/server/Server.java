@@ -2,14 +2,17 @@ package ru.ifmo.server;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.ifmo.server.annotation.URL;
 import ru.ifmo.server.util.Utils;
 
 import java.io.*;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -59,12 +62,14 @@ public class Server implements Closeable {
     private ServerSocket socket;
     private ExecutorService acceptorPool;
     private ExecutorService connectionProcessingPool;
+    private Map<String, ReflectHandler> classHandlers;
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
     private Thread killSess;
     private static Map<String, Session> sessions = new ConcurrentHashMap<>();
 
     private Server(ServerConfig config) {
         this.config = new ServerConfig(config);
+        classHandlers = new HashMap<>();
     }
 
     static Map<String, Session> getSessions() {
@@ -104,6 +109,7 @@ public class Server implements Closeable {
                 LOG.debug("Starting server with config: {}", config);
 
             Server server = new Server(config);
+            server.addScanClasses(config.getClasses());
             server.openConnection();
             server.startAcceptor();
             LOG.info("Server started on port: {}", config.getPort());
@@ -132,6 +138,73 @@ public class Server implements Closeable {
         killSess.interrupt();
         Utils.closeQuiet(socket);
         socket = null;
+    }
+
+    private class ReflectHandler {
+        Method m;
+        Object obj;
+        EnumSet<HttpMethod> set;
+
+        ReflectHandler(Object obj, Method m, EnumSet<HttpMethod> set) {
+            assert m != null;
+            assert obj != null;
+            assert set != null && !set.isEmpty();
+
+            this.m = m;
+            this.obj = obj;
+            this.set = set;
+        }
+        boolean isApplicable(HttpMethod method) {
+            return set.contains(HttpMethod.GET) || set.contains(method);
+        }
+    }
+
+    private void addScanClasses(Collection<Class<?>> classes) {
+        Collection<Class<?>> classList = new ArrayList<>(classes);
+
+        for (Class<?> c : classList) {
+            try {
+//                String name = c.getName();
+//                Class<?> cls = Class.forName(name);
+
+                for (Method method : c.getDeclaredMethods()) {
+                    URL annot = method.getAnnotation(URL.class);
+                    if (annot != null) {
+                        Class<?>[] params = method.getParameterTypes();
+                        Class<?> methodType = method.getReturnType();
+
+                        if (params.length == 2 && methodType.equals(void.class) && Modifier.isPublic(method.getModifiers())
+                                && params[0].equals(Request.class) && params[1].equals(Response.class)) {
+                            String path = annot.value();
+                            EnumSet<HttpMethod> set = EnumSet.copyOf(Arrays.asList(annot.method()));
+
+                            ReflectHandler reflectHandler = new ReflectHandler(c.getConstructor().newInstance(), method, set);
+                            classHandlers.put(path, reflectHandler);
+                        } else {
+                            throw new ServerException("Invalid @URL annotated method: " + c.getSimpleName() + "." + method.getName() + "(). "
+                                    + "Valid method: must be public void and accept only two arguments: Request and Response." + '\n' +
+                                    "Example: public void helloWorld(Request request, Response Response");
+                        }
+
+                    }
+                }
+            } catch (ReflectiveOperationException e) {
+                throw new ServerException("Unable initialize @URL annotated handlers. ", e);
+            }
+        }
+    }
+
+    private void processReflectHandler(ReflectHandler rf, Request req, Response resp, Socket sock) throws IOException {
+        try {
+            rf.m.invoke(rf.obj, req, resp);
+            sendResponse(resp, req);
+        } catch (Exception e) { // Handle any user exception here.
+            if (LOG.isDebugEnabled())
+                LOG.error("Error invoke method:" + rf.m, e);
+
+            respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
+                    sock.getOutputStream());
+        }
     }
 
     private void processConnection(Socket sock) throws IOException {
@@ -176,9 +249,16 @@ public class Server implements Closeable {
                 respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
                         sock.getOutputStream());
             }
-        } else
-            respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not found"),
-                    sock.getOutputStream());
+        }
+        else{
+            ReflectHandler reflectHandler = classHandlers.get(req.getPath());
+            if (reflectHandler != null && reflectHandler.isApplicable(req.method))
+                processReflectHandler(reflectHandler, req, resp, sock);
+            else{
+                respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not found"),
+                        sock.getOutputStream());
+            }
+        }
     }
 
     private void sendResponse(Response resp, Request req) {
@@ -345,22 +425,6 @@ public class Server implements Closeable {
     private boolean isMethodSupported(HttpMethod method) {
         return method == HttpMethod.GET;
     }
-
-//    private class ConnectionHandler implements Runnable {
-//
-//        public void run() {
-//            connectionProcessingPool = Executors.newCachedThreadPool();
-//            while (!Thread.currentThread().isInterrupted()) {
-//                try (Socket sock = socket.accept()) {
-//                    sock.setSoTimeout(config.getSocketTimeout());
-//                    connectionProcessingPool.submit(new NewConnection(sock));
-//                } catch (Exception e) {
-//                    if (!Thread.currentThread().isInterrupted())
-//                        LOG.error("Error accepting connection", e);
-//                }
-//            }
-//        }
-//    }
 
     private class ConnectionHandler implements Runnable {
 
