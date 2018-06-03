@@ -18,7 +18,7 @@ public class SessionKiller implements Runnable {
                     LocalDateTime curntTime = LocalDateTime.now();
                     Thread.sleep(1000);
                     if (entry.getValue().getExpire() != null && curntTime.isAfter(entry.getValue().getExpire())) {
-                        LOG.info("Deleting session '" + entry.getKey() + "'. Goodbye " + entry.getValue().getParam("name surname"));
+                        LOG.info("Deleting session '" + entry.getKey() + "'. Goodbye " + entry.getValue().getData("name surname"));
                         entry.getValue().setExpired(true);
                         Server.removeSession(entry.getKey());
                     }

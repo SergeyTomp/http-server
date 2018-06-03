@@ -84,7 +84,7 @@ public class Server implements Closeable {
         killSess = new Thread(sessionKiller);
         killSess.start();
 
-        LOG.info("Session listener started, session will be deleted by timeout.");
+        LOG.info("Session killer process started, session will be deleted by timeout.");
     }
 
     /**
@@ -219,28 +219,6 @@ public class Server implements Closeable {
                 }
                 pw.write("Set-Cookie:" + SPACE + cookieLine.toString() + CRLF);
             }
-//            if (resp.cookieList != null) {
-//
-//                for (Cookie cookie : resp.cookieList) {
-//                    StringBuilder cookieLine = new StringBuilder();
-//                    cookieLine.append(cookie.getKey());
-//                    cookieLine.append("=");
-//                    cookieLine.append(cookie.getValue());
-//                    if (cookie.getMaxAge() != 0) {
-//                        cookieLine.append(";Max-Age=");
-//                        cookieLine.append(cookie.getMaxAge());
-//                    }
-//                    if (cookie.getDomain() != null) {
-//                        cookieLine.append(";DOMAIN=");
-//                        cookieLine.append(cookie.getDomain());
-//                    }
-//                    if (cookie.getPath() != null) {
-//                        cookieLine.append(";PATH=");
-//                        cookieLine.append(cookie.getPath());
-//                    }
-//                    pw.write("Set-Cookie:" + SPACE + cookieLine.toString() + CRLF);
-//                }
-//            }
             pw.write(CRLF);
             pw.write(resp.getOutputStream().toString());
             pw.flush();
@@ -410,13 +388,14 @@ public class Server implements Closeable {
 
             while (!Thread.currentThread().isInterrupted()) {
                 try {
+                    LOG.info("New connection opened " + Thread.currentThread().getName());
                     processConnection(sock);
                 } catch (IOException e) {
                     LOG.error("Error input / output during data transfer", e);
-
                 } finally {
                     try {
                         sock.close();
+                        LOG.info("Connection closed " + Thread.currentThread().getName());
                         Thread.currentThread().interrupt();
                     } catch (IOException e) {
                         if (!Thread.currentThread().isInterrupted())

@@ -11,6 +11,7 @@ import java.util.Map;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
 import static ru.ifmo.server.Session.SESSION_COOKIENAME;
+import static ru.ifmo.server.Session.SESSION_OPENTIME;
 
 /**
  * Keeps request information: method, headers, params
@@ -101,15 +102,15 @@ public class Request {
     }
     // рекурсивно создаём сессию если не найдена в Map sessions на сервере, (чтобы не задваивать блок создания)
     public Session getSession(boolean open) {
-        if (!getCookies().containsKey(SESSION_COOKIENAME) || open) {
+        if (!getCookies().containsKey(SESSION_COOKIENAME) || open) { //проверим, нет ли в cookie id открытой сессии
             session = new Session();
             Server.setSessions(session.getId(), session);
         } else {
             session = Server.getSessions().get(getCookieValue(SESSION_COOKIENAME)); //проверим, точно ли ещё есть на сервере
-            if (session == null) {
+            if (session == null || session.expired) {
                 session = getSession(true);
             }
-            session.setExpire(1); //продлим сессию, если она есть
+            else{ session.setExpire(SESSION_OPENTIME);} //продлим сессию, если она есть и не истекла
         }
         return session;
     }
