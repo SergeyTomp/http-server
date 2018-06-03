@@ -140,52 +140,72 @@ public class Server implements Closeable {
         socket = null;
     }
 
+//    private class ReflectHandler {
+//        Method meth;
+//        Object obj;
+//        EnumSet<HttpMethod> set;
+//
+//        ReflectHandler(Object obj, Method meth, EnumSet<HttpMethod> set) {
+//            assert meth != null;
+//            assert obj != null;
+//            assert set != null && !set.isEmpty();
+//
+//            this.meth = meth;
+//            this.obj = obj;
+//            this.set = set;
+//        }
+//        boolean isApplicable(HttpMethod method) {
+//            return set.contains(HttpMethod.GET) || set.contains(method);
+//        }
+//    }
+
     private class ReflectHandler {
-        Method m;
+        Method meth;
         Object obj;
-        EnumSet<HttpMethod> set;
+        HttpMethod[] httpMethods;
 
-        ReflectHandler(Object obj, Method m, EnumSet<HttpMethod> set) {
-            assert m != null;
+        ReflectHandler(Object obj, Method meth, HttpMethod[] httpMethods) {
+            assert meth != null;
             assert obj != null;
-            assert set != null && !set.isEmpty();
+            assert httpMethods != null && httpMethods.length != 0;
 
-            this.m = m;
+            this.meth = meth;
             this.obj = obj;
-            this.set = set;
+            this.httpMethods = httpMethods;
         }
         boolean isApplicable(HttpMethod method) {
-            return set.contains(HttpMethod.GET) || set.contains(method);
+            return Arrays.stream(httpMethods).anyMatch(m -> m == method);
         }
     }
+
 
     private void addScanClasses(Collection<Class<?>> classes) {
         Collection<Class<?>> classList = new ArrayList<>(classes);
 
-        for (Class<?> c : classList) {
+        for (Class<?> cls : classList) {
             try {
-//                String name = c.getName();
-//                Class<?> cls = Class.forName(name);
-
-                for (Method method : c.getDeclaredMethods()) {
+                for (Method method : cls.getDeclaredMethods()) {
                     URL annot = method.getAnnotation(URL.class);
                     if (annot != null) {
                         Class<?>[] params = method.getParameterTypes();
                         Class<?> methodType = method.getReturnType();
 
-                        if (params.length == 2 && methodType.equals(void.class) && Modifier.isPublic(method.getModifiers())
-                                && params[0].equals(Request.class) && params[1].equals(Response.class)) {
+                        if (params.length == 2
+                                && methodType.equals(void.class)
+                                && Modifier.isPublic(method.getModifiers())
+                                && params[0].equals(Request.class)
+                                && params[1].equals(Response.class)) {
                             String path = annot.value();
-                            EnumSet<HttpMethod> set = EnumSet.copyOf(Arrays.asList(annot.method()));
-
-                            ReflectHandler reflectHandler = new ReflectHandler(c.getConstructor().newInstance(), method, set);
+                            HttpMethod[] meth = annot.method();
+//                            EnumSet<HttpMethod> set = EnumSet.copyOf(Arrays.asList(annot.method()));
+                            ReflectHandler reflectHandler = new ReflectHandler(cls.getConstructor().newInstance(), method, meth);
+//                            ReflectHandler reflectHandler = new ReflectHandler(c.getConstructor().newInstance(), method, set);
                             classHandlers.put(path, reflectHandler);
                         } else {
-                            throw new ServerException("Invalid @URL annotated method: " + c.getSimpleName() + "." + method.getName() + "(). "
+                            throw new ServerException("Invalid @URL annotated method: " + cls.getSimpleName() + "." + method.getName() + "(). "
                                     + "Valid method: must be public void and accept only two arguments: Request and Response." + '\n' +
                                     "Example: public void helloWorld(Request request, Response Response");
                         }
-
                     }
                 }
             } catch (ReflectiveOperationException e) {
@@ -194,13 +214,26 @@ public class Server implements Closeable {
         }
     }
 
-    private void processReflectHandler(ReflectHandler rf, Request req, Response resp, Socket sock) throws IOException {
+//    private void processReflectHandler(ReflectHandler refHand, Request req, Response resp, Socket sock) throws IOException {
+//        try {
+//            refHand.meth.invoke(refHand.obj, req, resp);
+//            sendResponse(resp, req);
+//        } catch (Exception e) { // Handle any user exception here.
+//            if (LOG.isDebugEnabled())
+//                LOG.error("Error invoke method:" + refHand.m, e);
+//
+//            respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
+//                    sock.getOutputStream());
+//        }
+//    }
+
+    private void processReflectHandler(ReflectHandler refHand, Request req, Response resp, Socket sock) throws IOException {
         try {
-            rf.m.invoke(rf.obj, req, resp);
+            refHand.meth.invoke(refHand.obj, req, resp);
             sendResponse(resp, req);
         } catch (Exception e) { // Handle any user exception here.
             if (LOG.isDebugEnabled())
-                LOG.error("Error invoke method:" + rf.m, e);
+                LOG.error("Error invoke method:" + refHand.meth, e);
 
             respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
                     sock.getOutputStream());
@@ -381,6 +414,7 @@ public class Server implements Closeable {
             }
         }
         req.addHeader(key, sb.substring(start, len).trim());
+        System.out.println(key + " " + sb.substring(start, len).trim());
 
         if ("Cookie".equals(key)) {
             String[] pairs = sb.substring(start, len).trim().split("; ");
@@ -389,6 +423,9 @@ public class Server implements Closeable {
                 String[] keyValue = pair.split("=");
                 req.mapCookie(keyValue[0], new Cookie(keyValue[0], keyValue[1]));
             }
+        }
+        for (Map.Entry <String, Cookie> entry : req.getCookies().entrySet()){
+            System.out.println(entry.getKey() + " " + entry.getValue().getValue());
         }
     }
 
@@ -452,14 +489,14 @@ public class Server implements Closeable {
 
             while (!Thread.currentThread().isInterrupted()) {
                 try {
-                    LOG.info("New connection opened " + Thread.currentThread().getName());
+//                    LOG.info("New connection opened " + Thread.currentThread().getName());
                     processConnection(sock);
                 } catch (IOException e) {
                     LOG.error("Error input / output during data transfer", e);
                 } finally {
                     try {
                         sock.close();
-                        LOG.info("Connection closed " + Thread.currentThread().getName());
+//                        LOG.info("Connection closed " + Thread.currentThread().getName());
                         Thread.currentThread().interrupt();
                     } catch (IOException e) {
                         if (!Thread.currentThread().isInterrupted())

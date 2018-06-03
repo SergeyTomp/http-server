@@ -8,7 +8,7 @@ import static ru.ifmo.server.Http.TEXT_PLAIN;
 
 public class HandlersClass {
 
-    @URL(method = HttpMethod.GET, value = "/index")
+    @URL(method = {HttpMethod.GET},value = "/index")
     public void handle1(Request request, Response response) throws Exception {
 
         response.setHeader("HELLO", "WORLD!");
@@ -20,8 +20,7 @@ public class HandlersClass {
         wr.write("Досвидания!\r\n");
         wr.flush();
     }
-
-    @URL(method = HttpMethod.GET, value = "/index/ifmo")
+    @URL(method = {HttpMethod.GET}, value = "/index/ifmo")
     public void handle2(Request request, Response response) throws Exception {
         response.setHeader("FIRST", "HANDLER!");
         response.setStatusCode(Http.SC_OK);
@@ -34,5 +33,6 @@ public class HandlersClass {
         wr.write("Удачно!\r\n");
         wr.flush();
     }
+
 }
 
