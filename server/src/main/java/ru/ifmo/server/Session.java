@@ -30,7 +30,7 @@ public class Session {
     public LocalDateTime getExpire() {
         return expire;
     }
-    //синхронизация здесь пока не нужна, задействуется при многопоточной обработке запросов, сделал сразу чтобы не забыть
+    // не уверен в необходимости синхронизации, пока пусть будет
     public synchronized void setExpire(int minutes) {
         this.expire = LocalDateTime.now().plusMinutes(minutes);
     }
@@ -46,11 +46,10 @@ public class Session {
         expired = true;
         Server.removeSession(id);
     }
-
+    // не уверен в необходимости синхронизации, пока пусть будет
     public <T> void setData(String key, T value) throws SessionException { //T value напр. корзина покупок, пока не используется
         if (!expired) {
             if (sessionData == null) {
-                //синхронизация здесь пока не нужна, задействуется при многопоточной обработке запросов, сделал сразу чтобы не забыть
                 synchronized (this) {
                     if (sessionData == null) {
                         sessionData = new ConcurrentHashMap<>();
@@ -62,7 +61,7 @@ public class Session {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T getParam(String key) {
+    public <T> T getData(String key) {
         return sessionData == null ? null : (T) sessionData.get(key);
     }
 
