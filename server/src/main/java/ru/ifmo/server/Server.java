@@ -2,7 +2,6 @@ package ru.ifmo.server;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.ifmo.server.annotation.URL;
 import ru.ifmo.server.util.Utils;
 
 import java.io.*;
@@ -314,9 +313,11 @@ public class Server implements Closeable {
                 pw.write(e.getKey() + ": " + e.getValue() + CRLF);
             }
 
-            if (req.getSession() != null) {
-                resp.addCookie(new Cookie(SESSION_COOKIENAME, req.getSession().getId()));
-            }
+            resp.addCookie(new Cookie(SESSION_COOKIENAME, req.getSession().getId()));
+//
+//            if (req.getSession() != null) {
+//                resp.addCookie(new Cookie(SESSION_COOKIENAME, req.getSession().getId()));
+//            }
 
             for (Map.Entry<String, Cookie> entry : resp.cookieMap.entrySet()) {
                 StringBuilder cookieLine = new StringBuilder();
@@ -424,6 +425,7 @@ public class Server implements Closeable {
                 req.mapCookie(keyValue[0], new Cookie(keyValue[0], keyValue[1]));
             }
         }
+//        req.setSession();
         for (Map.Entry <String, Cookie> entry : req.getCookies().entrySet()){
             System.out.println(entry.getKey() + " " + entry.getValue().getValue());
         }

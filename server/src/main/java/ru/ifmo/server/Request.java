@@ -94,6 +94,10 @@ public class Request {
         return cookieMap.get(key).getValue();
     }
 
+    public void setSession (){
+        getSession();
+    }
+
     public Session getSession() {
         if (session == null) {
             session = getSession(false); //сначала проверим, нет ли в cookie id открытой сессии

@@ -1,6 +1,4 @@
-package ru.ifmo.server.annotation;
-
-import ru.ifmo.server.HttpMethod;
+package ru.ifmo.server;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

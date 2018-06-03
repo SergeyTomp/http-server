@@ -1,7 +1,5 @@
 package ru.ifmo.server;
 
-import ru.ifmo.server.annotation.URL;
-
 import java.io.Writer;
 
 import static ru.ifmo.server.Http.TEXT_PLAIN;
