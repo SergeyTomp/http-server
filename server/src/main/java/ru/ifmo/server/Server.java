@@ -83,7 +83,7 @@ public class Server implements Closeable {
         killSess = new Thread(sessionKiller);
         killSess.start();
 
-        LOG.info("Session listener started, session will be deleted by timeout.");
+        LOG.info("Session killer started, session will be deleted by timeout.");
     }
 
     /**
