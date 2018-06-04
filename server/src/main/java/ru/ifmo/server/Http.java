@@ -1,5 +1,8 @@
 package ru.ifmo.server;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * HTTP constants.
  */
@@ -14,4 +17,8 @@ public class Http {
 
     /** OK header that preceded rest response data. */
     public static final String OK_HEADER = "HTTP/1.0 200 OK\r\n\r\n";
+}
+
+class CustomErrorResponse{
+   static Map<Integer, String> coderespMap = new HashMap<>();
 }

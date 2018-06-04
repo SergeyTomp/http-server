@@ -1,7 +1,13 @@
 package ru.ifmo.server;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * Holds server configs: local port, handler mappings, etc.
@@ -107,6 +113,15 @@ public class ServerConfig {
         this.socketTimeout = socketTimeout;
 
         return this;
+    }
+
+    public void setErrorPage(int code, String pageName) {
+        InputStream in = Server.class.getClassLoader().getResourceAsStream(pageName);
+        BufferedReader rdr = new BufferedReader(new InputStreamReader(in));
+        List<String> lines = rdr.lines().collect(toList());
+        StringBuilder sb = new StringBuilder();
+        lines.forEach(sb::append);
+        CustomErrorResponse.coderespMap.put(code, sb.toString());
     }
 
     @Override

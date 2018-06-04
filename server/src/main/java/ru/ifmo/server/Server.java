@@ -124,20 +124,25 @@ public class Server implements Closeable {
         catch (URISyntaxException e) {
             if (LOG.isDebugEnabled())
                 LOG.error("Malformed URL", e);
-            respond(SC_BAD_REQUEST, "Malformed URL", htmlMessage(SC_BAD_REQUEST + " Malformed URL"),
+            String htmlMsg = CustomErrorResponse.coderespMap.get(SC_BAD_REQUEST) == null ? SC_BAD_REQUEST + " Malformed URL"
+                    : CustomErrorResponse.coderespMap.get(SC_BAD_REQUEST);
+            respond(SC_BAD_REQUEST, "Malformed URL", htmlMessage(htmlMsg),
                     sock.getOutputStream());
             return;
         }
         catch (Exception e) {
             LOG.error("Error parsing request", e);
-            respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
+            String htmlMsg = CustomErrorResponse.coderespMap.get(SC_SERVER_ERROR) == null ? SC_SERVER_ERROR + " Server error"
+                    : CustomErrorResponse.coderespMap.get(SC_SERVER_ERROR);
+            respond(SC_SERVER_ERROR, "Server Error", htmlMessage(htmlMsg),
                     sock.getOutputStream());
             return;
         }
 
         if (!isMethodSupported(req.method)) {
-            respond(SC_NOT_IMPLEMENTED, "Not Implemented", htmlMessage(SC_NOT_IMPLEMENTED + " Method \""
-                    + req.method + "\" is not supported"), sock.getOutputStream());
+            String htmlMsg = CustomErrorResponse.coderespMap.get(SC_NOT_IMPLEMENTED) == null ? SC_NOT_IMPLEMENTED + " Method \""
+                    + req.method + "\" is not supported" : CustomErrorResponse.coderespMap.get(SC_NOT_IMPLEMENTED);
+            respond(SC_NOT_IMPLEMENTED, "Not Implemented", htmlMessage(htmlMsg), sock.getOutputStream());
             return;
         }
 
@@ -151,14 +156,18 @@ public class Server implements Closeable {
             catch (Exception e) {
                 if (LOG.isDebugEnabled())
                     LOG.error("Server error:", e);
-
-                respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
+                String htmlMsg = CustomErrorResponse.coderespMap.get(SC_SERVER_ERROR) == null ? SC_SERVER_ERROR + " Server error"
+                        : CustomErrorResponse.coderespMap.get(SC_SERVER_ERROR);
+                respond(SC_SERVER_ERROR, "Server Error", htmlMessage(htmlMsg),
                         sock.getOutputStream());
             }
         }
-        else
-            respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not found"),
+        else {
+            String htmlMsg = CustomErrorResponse.coderespMap.get(SC_NOT_FOUND) == null ? SC_NOT_FOUND + " Not found"
+                    : CustomErrorResponse.coderespMap.get(SC_NOT_FOUND);
+            respond(SC_NOT_FOUND, "Not Found", htmlMessage(htmlMsg),
                     sock.getOutputStream());
+        }
     }
 
     private Request parseRequest(Socket socket) throws IOException, URISyntaxException {
