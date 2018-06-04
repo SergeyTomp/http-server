@@ -42,10 +42,10 @@ public class Session {
         return id;
     }
 
-    public void invalidate() {
-        expired = true;
-        Server.removeSession(id);
-    }
+//    public void invalidate() {
+//        expired = true;
+//        Server.removeSession(id);
+//    }
     // не уверен в необходимости синхронизации, пока пусть будет
     public <T> void setData(String key, T value) throws SessionException { //T value напр. корзина покупок, пока не используется
         if (!expired) {

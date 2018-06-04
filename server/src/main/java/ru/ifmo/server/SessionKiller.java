@@ -9,18 +9,22 @@ import java.util.Map;
 public class SessionKiller implements Runnable {
 
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
+    private final Map<String, Session> sessions;
 
+    public SessionKiller(Map<String, Session> sessions) {
+        this.sessions = sessions;
+    }
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                for (Map.Entry<String, Session> entry : Server.getSessions().entrySet()) {
+                for (Map.Entry<String, Session> entry : sessions.entrySet()) {
                     LocalDateTime curntTime = LocalDateTime.now();
                     Thread.sleep(1000);
                     if (entry.getValue().getExpire() != null && curntTime.isAfter(entry.getValue().getExpire())) {
                         LOG.info("Deleting session '" + entry.getKey() + "'. Goodbye " + entry.getValue().getData("name surname"));
                         entry.getValue().setExpired(true);
-                        Server.removeSession(entry.getKey());
+                        sessions.remove(entry.getKey());
                     }
                 }
             } catch (InterruptedException e) {
