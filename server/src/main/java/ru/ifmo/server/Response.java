@@ -16,8 +16,8 @@ import static ru.ifmo.server.Http.CONTENT_TYPE;
 public class Response {
 
     final Socket socket;
-    private int statusCode;
-    private Map<String, String> headers;
+    int statusCode;
+    Map<String, String> headers;
     ByteArrayOutputStream byteOut;
     Writer printWriter;
 
@@ -38,15 +38,10 @@ public class Response {
     }
 
     public void setHeaders (Map<String, String> h){
-        if(headers == null){
-            headers = new HashMap<>();
-        }
-        headers.putAll(h);
+        getHeaders().putAll(h);
     }
     public void setHeader(String k, String v) {
-        if(headers == null){
-            headers = new HashMap<>();}
-        headers.put(k, v);
+        getHeaders().put(k, v);
     }
     public Map<String, String> getHeaders() {
         if(headers == null){
@@ -80,10 +75,7 @@ public class Response {
     // Writer для редактирования handler.handle, там через него пишем в тело ответа.
     public Writer getWriter() {
         if (printWriter == null) {
-            if(byteOut == null){
-                byteOut = new ByteArrayOutputStream();
-            }
-            printWriter = new OutputStreamWriter(byteOut);
+            printWriter = new OutputStreamWriter(getOutputStream());
         }
         return printWriter;
     }
