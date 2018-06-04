@@ -334,6 +334,9 @@ public class Server implements Closeable {
                 req.mapCookie(keyValue[0], new Cookie(keyValue[0], keyValue[1]));
             }
         }
+        for (Map.Entry <String, Cookie> entry : req.getCookies().entrySet()){
+            System.out.println(entry.getKey() + " " + entry.getValue().getValue());
+        }
     }
 
     private int readLine(InputStreamReader in, StringBuilder sb) throws IOException {
