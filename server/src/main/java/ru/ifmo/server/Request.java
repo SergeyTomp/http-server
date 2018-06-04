@@ -11,7 +11,6 @@ import java.util.Map;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
 import static ru.ifmo.server.Session.SESSION_COOKIENAME;
-import static ru.ifmo.server.Session.SESSION_OPENTIME;
 
 /**
  * Keeps request information: method, headers, params
@@ -28,9 +27,11 @@ public class Request {
     private Map<String, Cookie> cookieMap;
     private Session session;
 
-    Request(Socket socket) {
-        this.socket = socket;
+    private final Map<String, Session> sessions;
 
+    Request(Socket socket, Map<String, Session> sessions) {
+        this.socket = socket;
+        this.sessions = sessions;
     }
 
     /**
@@ -106,15 +107,15 @@ public class Request {
     }
     // рекурсивно создаём сессию если не найдена в Map sessions на сервере, (чтобы не задваивать блок создания)
     public Session getSession(boolean open) {
-        if (!getCookies().containsKey(SESSION_COOKIENAME) || open) { //проверим, нет ли в cookie id открытой сессии
+        if (!getCookies().containsKey(SESSION_COOKIENAME) || open) {
             session = new Session();
-            Server.setSessions(session.getId(), session);
+            sessions.put(session.getId(), session);
         } else {
-            session = Server.getSessions().get(getCookieValue(SESSION_COOKIENAME)); //проверим, точно ли ещё есть на сервере
-            if (session == null || session.expired) {
+            session = sessions.get(getCookieValue(SESSION_COOKIENAME)); //проверим, точно ли ещё есть на сервере
+            if (session == null) {
                 session = getSession(true);
             }
-            else{ session.setExpire(SESSION_OPENTIME);} //продлим сессию, если она есть и не истекла
+            session.setExpire(1); //продлим сессию, если она есть
         }
         return session;
     }
