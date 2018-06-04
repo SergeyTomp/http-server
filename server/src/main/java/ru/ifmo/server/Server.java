@@ -4,14 +4,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ifmo.server.util.Utils;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -55,11 +53,8 @@ public class Server implements Closeable {
     private static final int READER_BUF_SIZE = 1024;
 
     private final ServerConfig config;
-
     private ServerSocket socket;
-
     private ExecutorService acceptorPool;
-
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
 
     private Server(ServerConfig config) {
@@ -147,11 +142,11 @@ public class Server implements Closeable {
         if (handler != null) {
             try {
                 handler.handle(req, resp);
+                sendResponse(resp);
             }
             catch (Exception e) {
                 if (LOG.isDebugEnabled())
                     LOG.error("Server error:", e);
-
                 respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
                         sock.getOutputStream());
             }
@@ -159,6 +154,37 @@ public class Server implements Closeable {
         else
             respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not found"),
                     sock.getOutputStream());
+    }
+
+    private void sendResponse(Response resp){
+        try {
+            if (resp.printWriter != null)
+                resp.printWriter.flush();
+
+            if (resp.headers != null && resp.headers.get(CONTENT_LENGTH) == null){
+                resp.setContentLength(resp.byteOut.size());
+            }
+            if (resp.getStatusCode() == 0){
+                resp.setStatusCode(Http.SC_OK);
+            }
+
+            OutputStream out = resp.getSocketOutputStream();
+            Writer pw = new BufferedWriter(new OutputStreamWriter(out));
+            pw.write((Http.OK_HEADER_PLUS + resp.getStatusCode() + CRLF));
+            if (resp.headers != null) {
+                for (Map.Entry e : resp.headers.entrySet()) {
+                    pw.write(e.getKey() + ": " + e.getValue() + CRLF);
+                }
+            }
+            pw.write(CRLF);
+            pw.flush();
+
+            out.write(resp.byteOut.toByteArray());
+            out.flush();
+        }
+        catch (Exception e){
+            throw new ServerException("Fail to get output stream", e);
+        }
     }
 
     private Request parseRequest(Socket socket) throws IOException, URISyntaxException {
@@ -261,7 +287,7 @@ public class Server implements Closeable {
      *
      * @throws IOException Should be never thrown.
      */
-    public void close() throws IOException {
+    public void close(){
         stop();
     }
 

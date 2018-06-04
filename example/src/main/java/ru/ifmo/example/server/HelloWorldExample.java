@@ -2,9 +2,6 @@ package ru.ifmo.example.server;
 
 import ru.ifmo.server.*;
 
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-
 /**
  * Simple hello world example.
  */
@@ -14,9 +11,7 @@ public class HelloWorldExample {
                 .addHandler("/index", new Handler() {
                     @Override
                     public void handle(Request request, Response response) throws Exception {
-                        Writer writer = new OutputStreamWriter(response.getOutputStream());
-                        writer.write(Http.OK_HEADER + "Hello World!");
-                        writer.flush();
+                        response.getWriter().write("Hello World!");
                     }
                 });
 
