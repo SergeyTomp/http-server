@@ -61,26 +61,26 @@ public class Server implements Closeable {
     private ExecutorService connectionProcessingPool;
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
     private Thread killSess;
-    private static Map<String, Session> sessions = new ConcurrentHashMap<>();
+    private Map<String, Session> sessions = new ConcurrentHashMap<>();
 
     private Server(ServerConfig config) {
         this.config = new ServerConfig(config);
     }
 
-    static Map<String, Session> getSessions() {
+    Map<String, Session> getSessions() {
         return sessions;
     }
 
-    static void setSessions(String key, Session session) {
-        Server.sessions.put(key, session);
+    void setSessions(String key, Session session) {
+        sessions.put(key, session);
     }
 
-    static void removeSession(String key) {
-        Server.sessions.remove(key);
+    void removeSession(String key) {
+        sessions.remove(key);
     }
 
     private void startSessionKiller() {
-        SessionKiller sessionKiller = new SessionKiller();
+        SessionKiller sessionKiller = new SessionKiller(sessions);
         killSess = new Thread(sessionKiller);
         killSess.start();
 
@@ -231,7 +231,7 @@ public class Server implements Closeable {
 
     private Request parseRequest(Socket socket) throws IOException, URISyntaxException {
         InputStreamReader reader = new InputStreamReader(socket.getInputStream());
-        Request req = new Request(socket);
+        Request req = new Request(socket,sessions);
         StringBuilder sb = new StringBuilder(READER_BUF_SIZE);
 
         while (readLine(reader, sb) > 0) {
