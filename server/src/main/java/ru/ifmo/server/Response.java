@@ -16,15 +16,40 @@ import static ru.ifmo.server.Http.CONTENT_TYPE;
 public class Response {
 
     final Socket socket;
-    private int statusCode;
-    private Map<String, String> headers;
+    int statusCode;
+    Map<String, String> headers;
     ByteArrayOutputStream byteOut;
-    Map<String, Cookie> cookieMap;
-
     Writer printWriter;
+    Map<String, Cookie> cookieMap;
 
     Response(Socket socket) {
         this.socket = socket;
+    }
+    public void setContentType (String s){
+        getHeaders().put(CONTENT_TYPE, s);
+    }
+    public void setContentLength(long l){
+        getHeaders().put(CONTENT_LENGTH, String.valueOf(l));
+    }
+    public void setStatusCode (int c){
+        if (c < Http.SC_CONTINUE || c > Http.SC_NOT_IMPLEMENTED)
+            throw new ServerException("Not valid http status code: " + c);
+        statusCode = c;
+    }
+
+    public void setHeaders (Map<String, String> h){
+        getHeaders().putAll(h);
+    }
+    public void setHeader(String k, String v) {
+        getHeaders().put(k, v);
+    }
+    public Map<String, String> getHeaders() {
+        if(headers == null){
+            headers = new HashMap<>();}
+        return headers;
+    }
+    public int getStatusCode (){
+        return statusCode;
     }
 
     public void addCookie(Cookie cookie) {
@@ -32,45 +57,6 @@ public class Response {
             cookieMap = new HashMap<>();
         }
         cookieMap.put(cookie.getKey(), cookie);
-    }
-
-    public void setContentType(String s) {
-        headers.put(CONTENT_TYPE, s);
-    }
-
-    public void setContentLength(long l) {
-        headers.put(CONTENT_LENGTH, String.valueOf(l));
-    }
-
-    public void setStatusCode(int c) {
-        if (c < Http.SC_CONTINUE || c > Http.SC_NOT_IMPLEMENTED)
-            throw new ServerException("Not valid http status code: " + c);
-        statusCode = c;
-    }
-
-    public void setHeaders(Map<String, String> h) {
-        if (headers == null) {
-            headers = new HashMap<>();
-        }
-        headers.putAll(h);
-    }
-
-    public void setHeader(String key, String val) {
-        if (headers == null) {
-            headers = new HashMap<>();
-        }
-        headers.put(key, val);
-    }
-
-    public Map<String, String> getHeaders() {
-        if (headers == null) {
-            headers = new HashMap<>();
-        }
-        return headers;
-    }
-
-    public int getStatusCode() {
-        return statusCode;
     }
 
     /**
@@ -87,7 +73,7 @@ public class Response {
     }
 
     public OutputStream getOutputStream() {
-        if (byteOut == null) {
+        if (byteOut == null){
             byteOut = new ByteArrayOutputStream();
         }
         return byteOut;
@@ -96,12 +82,10 @@ public class Response {
     // Writer для редактирования handler.handle, там через него пишем в тело ответа.
     public Writer getWriter() {
         if (printWriter == null) {
-            if (byteOut == null) {
-                byteOut = new ByteArrayOutputStream();
-            }
-            printWriter = new OutputStreamWriter(byteOut);
+            printWriter = new OutputStreamWriter(getOutputStream());
         }
         return printWriter;
     }
+
 }
 

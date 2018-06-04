@@ -184,9 +184,10 @@ public class Server implements Closeable {
             if (resp.printWriter != null)
                 resp.printWriter.flush();
 
-            if (resp.getHeaders().get(CONTENT_LENGTH) == null) {
-                resp.getOutputStream();
-                resp.setContentLength(resp.byteOut.size());
+            if (resp.headers != null && resp.headers.get(CONTENT_LENGTH) == null) {
+//                resp.getOutputStream();
+                if (resp.byteOut != null)
+                    resp.setContentLength(resp.byteOut.size());
             }
             if (resp.getStatusCode() == 0) {
                 resp.setStatusCode(Http.SC_OK);
@@ -195,8 +196,10 @@ public class Server implements Closeable {
             OutputStream out = resp.getSocketOutputStream();
             Writer pw = new BufferedWriter(new OutputStreamWriter(out));
             pw.write((Http.OK_HEADER_PLUS + resp.getStatusCode() + CRLF));
-            for (Map.Entry e : resp.getHeaders().entrySet()) {
-                pw.write(e.getKey() + ": " + e.getValue() + CRLF);
+            if (resp.headers != null) {
+                for (Map.Entry e : resp.headers.entrySet()) {
+                    pw.write(e.getKey() + ": " + e.getValue() + CRLF);
+                }
             }
 
             if (req.getSession() != null) {
@@ -358,7 +361,7 @@ public class Server implements Closeable {
      *
      * @throws IOException Should be never thrown.
      */
-    public void close() {
+    public void close()  {
         stop();
     }
 
