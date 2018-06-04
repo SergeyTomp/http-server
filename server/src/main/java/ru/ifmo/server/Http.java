@@ -1,5 +1,8 @@
 package ru.ifmo.server;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * HTTP constants.
  */
@@ -23,4 +26,8 @@ public class Http {
     /** Mime types */
     public static final String TEXT_PLAIN = "text/plain";
     public static final String URL_ENCODED = "application/x-www-form-urlencoded";
+}
+
+class CustomErrorResponse{
+   static Map<Integer, String> coderespMap = new HashMap<>();
 }
