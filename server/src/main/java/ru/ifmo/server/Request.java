@@ -26,10 +26,11 @@ public class Request {
     private Map<String, String> args;
     private Map<String, Cookie> cookieMap;
     private Session session;
+    private final Map<String, Session> sessions;
 
-    Request(Socket socket) {
+    Request(Socket socket, Map<String, Session> sessions) {
         this.socket = socket;
-
+        this.sessions = sessions;
     }
 
     /**
@@ -84,7 +85,7 @@ public class Request {
         cookieMap.put(name, cookie);
     }
     public Map<String, Cookie> getCookies() {
-        if (getHeaders().get("Cookie") == null) {
+        if (!getHeaders().containsKey("Cookie")) {
             return emptyMap();
         }
         return unmodifiableMap(cookieMap);
@@ -103,9 +104,9 @@ public class Request {
     public Session getSession(boolean open) {
         if (!getCookies().containsKey(SESSION_COOKIENAME) || open) {
             session = new Session();
-            Server.setSessions(session.getId(), session);
+            sessions.put(session.getId(), session);
         } else {
-            session = Server.getSessions().get(getCookieValue(SESSION_COOKIENAME)); //проверим, точно ли ещё есть на сервере
+            session = sessions.get(getCookieValue(SESSION_COOKIENAME)); //проверим, точно ли ещё есть на сервере
             if (session == null) {
                 session = getSession(true);
             }
