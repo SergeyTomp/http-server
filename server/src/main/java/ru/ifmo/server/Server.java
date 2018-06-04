@@ -324,7 +324,8 @@ public class Server implements Closeable {
             }
         }
         req.addHeader(key, sb.substring(start, len).trim());
-
+        System.out.println(key + " " + sb.substring(start, len).trim());
+        
         if ("Cookie".equals(key)) {
             String[] pairs = sb.substring(start, len).trim().split("; ");
             for (int i = 0; i < pairs.length; i++) {
