@@ -62,6 +62,10 @@ public class Server implements Closeable {
     private Thread killSess;
     private Map<String, Session> sessions = new ConcurrentHashMap<>();
 
+    public Map<String, Session> getSessions() {
+        return sessions;
+    }
+
     private Server(ServerConfig config) {
         this.config = new ServerConfig(config);
     }
@@ -174,7 +178,6 @@ public class Server implements Closeable {
                 resp.printWriter.flush();
 
             if (resp.headers != null && resp.headers.get(CONTENT_LENGTH) == null) {
-//                resp.getOutputStream();
                 if (resp.byteOut != null)
                     resp.setContentLength(resp.byteOut.size());
             }
@@ -209,33 +212,11 @@ public class Server implements Closeable {
                 }
                 pw.write("Set-Cookie:" + SPACE + cookieLine.toString() + CRLF);
             }
-//            if (resp.cookieList != null) {
-//
-//                for (Cookie cookie : resp.cookieList) {
-//                    StringBuilder cookieLine = new StringBuilder();
-//                    cookieLine.append(cookie.getKey());
-//                    cookieLine.append("=");
-//                    cookieLine.append(cookie.getValue());
-//                    if (cookie.getMaxAge() != 0) {
-//                        cookieLine.append(";Max-Age=");
-//                        cookieLine.append(cookie.getMaxAge());
-//                    }
-//                    if (cookie.getDomain() != null) {
-//                        cookieLine.append(";DOMAIN=");
-//                        cookieLine.append(cookie.getDomain());
-//                    }
-//                    if (cookie.getPath() != null) {
-//                        cookieLine.append(";PATH=");
-//                        cookieLine.append(cookie.getPath());
-//                    }
-//                    pw.write("Set-Cookie:" + SPACE + cookieLine.toString() + CRLF);
-//                }
-//            }
+
             pw.write(CRLF);
-            pw.write(resp.getOutputStream().toString());
             pw.flush();
-//            out.write(resp.byteOut.toByteArray());
-//            out.flush();
+            out.write(resp.byteOut.toByteArray());
+            out.flush();
         } catch (Exception e) {
             throw new ServerException("Fail to get output stream", e);
         }
@@ -289,7 +270,6 @@ public class Server implements Closeable {
                     start = i + 1;
                 } else if (key != null && (query.charAt(i) == AMP || last)) {
                     req.addArgument(key, query.substring(start, last ? i + 1 : i));
-
                     key = null;
                     start = i + 1;
                 }
@@ -313,7 +293,6 @@ public class Server implements Closeable {
             }
         }
         req.addHeader(key, sb.substring(start, len).trim());
-        System.out.println(key + " " + sb.substring(start, len).trim());
         
         if ("Cookie".equals(key)) {
             String[] pairs = sb.substring(start, len).trim().split("; ");
@@ -324,7 +303,7 @@ public class Server implements Closeable {
             }
         }
         for (Map.Entry <String, Cookie> entry : req.getCookies().entrySet()){
-            System.out.println(entry.getKey() + " " + entry.getValue().getValue());
+           System.out.println("Session placed in cookies " + entry.getKey() + " " + entry.getValue().getValue());
         }
     }
 
@@ -339,8 +318,10 @@ public class Server implements Closeable {
         }
         if (count > 0 && sb.charAt(count - 1) == CR)
             sb.setLength(--count);
+
         if (LOG.isTraceEnabled())
             LOG.trace("Read line: {}", sb.toString());
+//        System.out.println(sb.toString());
         return count;
     }
 

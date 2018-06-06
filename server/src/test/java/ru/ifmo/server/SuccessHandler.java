@@ -11,6 +11,10 @@ public class SuccessHandler implements Handler {
 
     @Override
     public void handle(Request request, Response response) throws Exception {
+        request.getSession().setData("testArg3", request.getArguments().get("testArg3"));
+//
+//        response.getWriter().write(request.getSession().getParam("login").toString());
+//
         response.getWriter().write((TEST_RESPONSE +
                 "<br>" + request.getArguments() + CLOSE_HTML));
     }

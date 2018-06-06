@@ -4,7 +4,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.*;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -14,10 +13,13 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 
-import static org.junit.Assert.*;
-import static ru.ifmo.server.TestUtils.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static ru.ifmo.server.TestUtils.assertStatusCode;
 
 /**
  * Tests main server functionality.
@@ -64,14 +66,26 @@ public class ServerTest {
                 .build();
 
         HttpGet get = new HttpGet(uri);
-
         CloseableHttpResponse response = client.execute(host, get);
-
         assertStatusCode(HttpStatus.SC_OK, response);
         assertEquals(SuccessHandler.TEST_RESPONSE +
                         "<br>{1=1, 2=2, testArg1=testValue1, testArg2=2, testArg3=testVal3, testArg4=null}" +
                         SuccessHandler.CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
+        }
+    @Test
+    public void sessionTest() throws URISyntaxException, IOException {
+        URI uri = new URIBuilder(SUCCESS_URL)
+                .addParameter("testArg3", "testVal3")
+                .build();
+
+        HttpGet get = new HttpGet(uri);
+        CloseableHttpResponse response = client.execute(host, get);
+        assertStatusCode(HttpStatus.SC_OK, response);
+        assert server.getSessions() != null : "Sessions Map is empty";
+        assertEquals("Session data are invalid",
+                "testVal3",
+                ((server.getSessions().get((server.getSessions().keySet().toArray()[0]))).getParam("testArg3")).toString());
     }
 
     @Test
