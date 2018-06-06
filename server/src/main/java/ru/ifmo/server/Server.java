@@ -373,6 +373,9 @@ public class Server implements Closeable {
                 req.headers.get("Content-Type").contains("application/x-www-form-urlencoded")
                 || req.headers.get("Content-Type").contains("text/text"))) {
             readBody(reader, sb, req);
+            if (req.headers.get("Content-Type").contains("application/x-www-form-urlencoded")){
+                parseArgs(req, req.body);
+            }
         }
         return req;
     }
@@ -397,6 +400,11 @@ public class Server implements Closeable {
         assert req.path != null : "Request path can't be null";
 
         String query = req.path.getQuery();
+        parseArgs(req, query);
+    }
+
+    private void parseArgs(Request req, String query) {
+        int start;
         if (query != null) {
             start = 0;
             String key = null;
