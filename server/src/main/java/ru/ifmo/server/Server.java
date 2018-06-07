@@ -334,10 +334,11 @@ public class Server implements Closeable {
                 pw.write("Set-Cookie:" + SPACE + cookieLine.toString() + CRLF);
             }
             pw.write(CRLF);
-            pw.write(resp.getOutputStream().toString());
             pw.flush();
-//            out.write(resp.byteOut.toByteArray());
-//            out.flush();
+            if (resp.byteOut != null){
+                out.write(resp.byteOut.toByteArray());}
+            out.flush();
+
         } catch (Exception e) {
             throw new ServerException("Fail to get output stream", e);
         }
