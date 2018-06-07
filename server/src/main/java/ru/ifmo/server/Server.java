@@ -61,7 +61,7 @@ public class Server implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
     private Thread killSess;
     private Map<String, Session> sessions = new ConcurrentHashMap<>();
-    
+
     private Server(ServerConfig config) {
         this.config = new ServerConfig(config);
     }
