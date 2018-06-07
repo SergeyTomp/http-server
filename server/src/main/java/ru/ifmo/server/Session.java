@@ -31,8 +31,10 @@ public class Session {
         return expire;
     }
     // черновой вариант синхронизации, подумать при реализации многопоточности, не факт, что нужно
+
     public synchronized void setExpire(int minutes) {
-        this.expire = LocalDateTime.now().plusMinutes(minutes);
+//        this.expire = LocalDateTime.now().plusMinutes(minutes);
+        this.expire = LocalDateTime.now().plusSeconds(minutes);
     }
     public void setExpired(boolean expired) {
         this.expired = expired;

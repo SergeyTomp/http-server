@@ -18,6 +18,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static ru.ifmo.server.TestUtils.assertStatusCode;
 
@@ -28,8 +29,12 @@ public class ServerTest {
     private static final HttpHost host = new HttpHost("localhost", ServerConfig.DFLT_PORT);
 
     private static final String SUCCESS_URL = "/test_success";
+    private static final String SUCCESS_SESSION = "/test_sess_success";
+    private static final String SUCCES_SESSION_OPEN = "/test_sess_open";
+    private static final String SUCCES_SESSION_CHECK = "/test_sess_check";
     private static final String NOT_FOUND_URL = "/test_not_found";
     private static final String SERVER_ERROR_URL = "/test_fail";
+    private static final String COOKIE_URL = "/test_cookie";
 
     private static Server server;
     private static CloseableHttpClient client;
@@ -38,7 +43,10 @@ public class ServerTest {
     public static void initialize() {
         ServerConfig cfg = new ServerConfig()
                 .addHandler(SUCCESS_URL, new SuccessHandler())
-                .addHandler(SERVER_ERROR_URL, new FailHandler());
+                .addHandler(SERVER_ERROR_URL, new FailHandler())
+                .addHandler(SUCCES_SESSION_OPEN, new SessionOpenHandler())
+                .addHandler(SUCCES_SESSION_CHECK, new SessionCheckHandler())
+                .addHandler(COOKIE_URL, new CookieHandler());
 
         server = Server.start(cfg);
         client = HttpClients.createDefault();
@@ -68,25 +76,49 @@ public class ServerTest {
         HttpGet get = new HttpGet(uri);
         CloseableHttpResponse response = client.execute(host, get);
         assertStatusCode(HttpStatus.SC_OK, response);
+
         assertEquals(SuccessHandler.TEST_RESPONSE +
                         "<br>{1=1, 2=2, testArg1=testValue1, testArg2=2, testArg3=testVal3, testArg4=null}" +
                         SuccessHandler.CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
         }
-    @Test
-    public void sessionTest() throws URISyntaxException, IOException {
-        URI uri = new URIBuilder(SUCCESS_URL)
-                .addParameter("testArg3", "testVal3")
-                .build();
 
+    @Test
+    public void testSession ()throws URISyntaxException, IOException {
+        URI uri = new URIBuilder(SUCCES_SESSION_OPEN)
+                .addParameter("login", "password")
+                .build();
         HttpGet get = new HttpGet(uri);
         CloseableHttpResponse response = client.execute(host, get);
         assertStatusCode(HttpStatus.SC_OK, response);
-        assert server.getSessions() != null : "Sessions Map is empty";
-        assertEquals("Session data are invalid",
-                "testVal3",
-                ((server.getSessions().get((server.getSessions().keySet().toArray()[0]))).getParam("testArg3")).toString());
+
+        uri = new URIBuilder(SUCCES_SESSION_CHECK)
+                .addParameter("login", "password")
+                .build();
+        get = new HttpGet(uri);
+        response = client.execute(host, get);
+        assertStatusCode(HttpStatus.SC_OK, response);
+        assertEquals("Session data are invalid","password", EntityUtils.toString(response.getEntity()));
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        response = client.execute(host, get);
+        assertStatusCode(HttpStatus.SC_OK, response);
+        assertNotEquals("Session data are invalid","password", EntityUtils.toString(response.getEntity()));
     }
+
+    @Test
+    public void testCookie() throws Exception {
+
+        HttpGet req = new HttpGet(COOKIE_URL);
+        req.setHeader("Cookie", "somename=somevalue");
+        CloseableHttpResponse response = client.execute(host, req);
+        assertEquals("somename=somevalue", EntityUtils.toString(response.getEntity()));
+    }
+
 
     @Test
     public void testNotFound() throws Exception {

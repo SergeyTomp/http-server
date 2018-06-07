@@ -61,11 +61,7 @@ public class Server implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
     private Thread killSess;
     private Map<String, Session> sessions = new ConcurrentHashMap<>();
-
-    public Map<String, Session> getSessions() {
-        return sessions;
-    }
-
+    
     private Server(ServerConfig config) {
         this.config = new ServerConfig(config);
     }
@@ -215,7 +211,8 @@ public class Server implements Closeable {
 
             pw.write(CRLF);
             pw.flush();
-            out.write(resp.byteOut.toByteArray());
+            if (resp.byteOut != null){
+                out.write(resp.byteOut.toByteArray());}
             out.flush();
         } catch (Exception e) {
             throw new ServerException("Fail to get output stream", e);
@@ -301,9 +298,6 @@ public class Server implements Closeable {
                 String[] keyValue = pair.split("=");
                 req.mapCookie(keyValue[0], new Cookie(keyValue[0], keyValue[1]));
             }
-        }
-        for (Map.Entry <String, Cookie> entry : req.getCookies().entrySet()){
-           System.out.println("Session placed in cookies " + entry.getKey() + " " + entry.getValue().getValue());
         }
     }
 
