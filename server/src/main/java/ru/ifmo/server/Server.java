@@ -220,10 +220,10 @@ public class Server implements Closeable {
                 pw.write("Set-Cookie:" + SPACE + cookieLine.toString() + CRLF);
             }
             pw.write(CRLF);
-            pw.write(resp.getOutputStream().toString());
             pw.flush();
-//            out.write(resp.byteOut.toByteArray());
-//            out.flush();
+            if (resp.byteOut != null){
+                out.write(resp.byteOut.toByteArray());}
+            out.flush();
         } catch (Exception e) {
             throw new ServerException("Fail to get output stream", e);
         }
@@ -345,22 +345,6 @@ public class Server implements Closeable {
     private boolean isMethodSupported(HttpMethod method) {
         return method == HttpMethod.GET;
     }
-
-//    private class ConnectionHandler implements Runnable {
-//
-//        public void run() {
-//            connectionProcessingPool = Executors.newCachedThreadPool();
-//            while (!Thread.currentThread().isInterrupted()) {
-//                try (Socket sock = socket.accept()) {
-//                    sock.setSoTimeout(config.getSocketTimeout());
-//                    connectionProcessingPool.submit(new NewConnection(sock));
-//                } catch (Exception e) {
-//                    if (!Thread.currentThread().isInterrupted())
-//                        LOG.error("Error accepting connection", e);
-//                }
-//            }
-//        }
-//    }
 
     private class ConnectionHandler implements Runnable {
 

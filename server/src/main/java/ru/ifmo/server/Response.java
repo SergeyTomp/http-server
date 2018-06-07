@@ -87,7 +87,7 @@ public class Response {
     }
 
     public OutputStream getOutputStream() {
-        if (byteOut == null) {
+        if (byteOut == null){
             byteOut = new ByteArrayOutputStream();
         }
         return byteOut;
@@ -96,10 +96,7 @@ public class Response {
     // Writer для редактирования handler.handle, там через него пишем в тело ответа.
     public Writer getWriter() {
         if (printWriter == null) {
-            if (byteOut == null) {
-                byteOut = new ByteArrayOutputStream();
-            }
-            printWriter = new OutputStreamWriter(byteOut);
+            printWriter = new OutputStreamWriter(getOutputStream());
         }
         return printWriter;
     }
