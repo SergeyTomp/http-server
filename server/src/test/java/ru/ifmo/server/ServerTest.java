@@ -84,7 +84,7 @@ public class ServerTest {
         }
 
     @Test
-    public void testSession ()throws URISyntaxException, IOException {
+    public void testSession () throws URISyntaxException, IOException, InterruptedException {
         URI uri = new URIBuilder(SUCCES_SESSION_OPEN)
                 .addParameter("login", "password")
                 .build();
@@ -99,11 +99,8 @@ public class ServerTest {
         response = client.execute(host, get);
         assertStatusCode(HttpStatus.SC_OK, response);
         assertEquals("Session data are invalid","password", EntityUtils.toString(response.getEntity()));
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+
+        Thread.sleep(2000);
 
         response = client.execute(host, get);
         assertStatusCode(HttpStatus.SC_OK, response);
