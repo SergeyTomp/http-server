@@ -4,10 +4,15 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpStatus;
+import org.apache.http.*;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.*;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -16,6 +21,8 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -139,16 +146,40 @@ public class ServerTest {
 
     @Test
     public void testPost() throws Exception {
-        HttpRequest request = new HttpPost(SUCCESS_URL);
+        HttpPost request = new HttpPost(SUCCESS_URL);
 
         assertNotImplemented(request);
     }
 
     @Test
     public void testPut() throws Exception {
-        HttpRequest request = new HttpPut(SUCCESS_URL);
 
-        assertNotImplemented(request);
+        URI uri = new URIBuilder(SUCCESS_URL)
+                .addParameter("1", "1")
+                .addParameter("2", "2")
+                .addParameter("testArg1", "testValue1")
+                .addParameter("testArg2", "2")
+                .addParameter("testArg3", "testVal3")
+                .addParameter("testArg4", "")
+                .build();
+
+        HttpPost request = new HttpPost(uri);
+
+
+        List<NameValuePair> pairs = new ArrayList<NameValuePair>();
+        pairs.add(new BasicNameValuePair("paramName", "paramValue"));
+
+        request.addHeader("Content-Type", "text/text");
+
+        request.setEntity(new UrlEncodedFormEntity(pairs ));
+
+        CloseableHttpResponse response = client.execute(host, request);
+
+        assertStatusCode(HttpStatus.SC_OK, response);
+        assertEquals(SuccessHandler.TEST_RESPONSE +
+                        "<br>{1=1, 2=2, testArg1=testValue1, testArg2=2, testArg3=testVal3, testArg4=null}" +
+                        SuccessHandler.CLOSE_HTML,
+                EntityUtils.toString(response.getEntity()));
     }
 
     @Test
