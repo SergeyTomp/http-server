@@ -20,16 +20,16 @@ public class Response {
     Map<String, String> headers;
     ByteArrayOutputStream byteOut;
     Writer printWriter;
-
+    Map<String, Cookie> cookieMap;
 
     Response(Socket socket) {
         this.socket = socket;
     }
     public void setContentType (String s){
-        headers.put(CONTENT_TYPE, s);
+        getHeaders().put(CONTENT_TYPE, s);
     }
     public void setContentLength(long l){
-        headers.put(CONTENT_LENGTH, String.valueOf(l));
+        getHeaders().put(CONTENT_LENGTH, String.valueOf(l));
     }
     public void setStatusCode (int c){
         if (c < Http.SC_CONTINUE || c > Http.SC_NOT_IMPLEMENTED)
@@ -50,6 +50,13 @@ public class Response {
     }
     public int getStatusCode (){
         return statusCode;
+    }
+
+    public void addCookie(Cookie cookie) {
+        if (cookieMap == null) {
+            cookieMap = new HashMap<>();
+        }
+        cookieMap.put(cookie.getKey(), cookie);
     }
 
     /**
@@ -79,5 +86,6 @@ public class Response {
         }
         return printWriter;
     }
+
 }
 
