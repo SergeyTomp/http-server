@@ -19,6 +19,7 @@ public class ServerConfig {
     private int port = DFLT_PORT;
     private Map<String, Handler> handlers;
     private int socketTimeout;
+    private CompressionType compressionType;
 
     public ServerConfig() {
         handlers = new HashMap<>();
@@ -26,10 +27,10 @@ public class ServerConfig {
 
     public ServerConfig(ServerConfig config) {
         this();
-
         port = config.port;
         handlers = new HashMap<>(config.handlers);
         socketTimeout = config.socketTimeout;
+        compressionType = config.compressionType;
     }
 
     /**
@@ -78,6 +79,15 @@ public class ServerConfig {
 
     Handler handler(String path) {
         return handlers.get(path);
+    }
+
+    public CompressionType getCompressionType() {
+        return compressionType;
+    }
+    public ServerConfig setCompression(CompressionType compression) {
+        this.compressionType = compression;
+
+        return this;
     }
 
     /**
@@ -130,6 +140,7 @@ public class ServerConfig {
                 "port=" + port +
                 ", handlers=" + handlers +
                 ", socketTimeout=" + socketTimeout +
+                ", compressionType=" + compressionType +
                 '}';
     }
 }

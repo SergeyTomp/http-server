@@ -28,8 +28,8 @@ public class Response {
     public void setContentType (String s){
         getHeaders().put(CONTENT_TYPE, s);
     }
-    public void setContentLength(long l){
-        getHeaders().put(CONTENT_LENGTH, String.valueOf(l));
+    public void setContentLength(long len){
+        getHeaders().put(CONTENT_LENGTH, String.valueOf(len));
     }
     public void setStatusCode (int c){
         if (c < Http.SC_CONTINUE || c > Http.SC_NOT_IMPLEMENTED)
