@@ -1,6 +1,7 @@
 package ru.ifmo.example.server;
 
-import ru.ifmo.server.HandlersClass;
+import ru.ifmo.server.HandlerClass1;
+import ru.ifmo.server.HandlerClass2;
 import ru.ifmo.server.Server;
 import ru.ifmo.server.ServerConfig;
 
@@ -36,7 +37,9 @@ public class TestExample {
 //                        wr.flush();
 //                    }
 //                });
-        config.addClass(HandlersClass.class);
+//        config.addClass(HandlersClass.class);
+        config.addHandlerClass("/index", HandlerClass1.class);
+        config.addHandlerClass("/index/ifmo", HandlerClass2.class);
         Server.start(config);
     }
 }
