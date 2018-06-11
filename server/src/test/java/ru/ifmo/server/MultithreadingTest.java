@@ -8,28 +8,15 @@ import org.apache.http.impl.client.HttpClients;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 import java.io.IOException;
+
 import static org.junit.Assert.assertEquals;
 
 public class MultithreadingTest {
 
     private static final HttpHost host = new HttpHost("localhost", ServerConfig.DFLT_PORT);
-    private static final Object monitor = new Object();
-    private static void waitMonitor() {
-        synchronized (monitor){
-            try {
-                monitor.wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public static void notifyMonitor() {
-        synchronized (monitor){
-            monitor.notify();
-        }
-    }
+    static final Object monitor = new Object();
 
     private static final String SUCCESS_URL1 = "/test_success1";
     private static final String SUCCESS_URL2 = "/test_success2";
@@ -39,16 +26,8 @@ public class MultithreadingTest {
     private static CloseableHttpClient client1;
     private static CloseableHttpClient client2;
 
-    static volatile boolean isFinishedClient1 = false;
-    static volatile boolean isFinishedClient2 = false;
-
-    public static void isFinishedClient1True() {
-        isFinishedClient1 = true;
-    }
-
-    public static void isFinishedClient2True() {
-        isFinishedClient2 = true;
-    }
+    static volatile boolean isFinishedThread1 = false;
+    static volatile boolean isFinishedThread2 = false;
 
     @BeforeClass
     public static void initialize() {
@@ -71,8 +50,8 @@ public class MultithreadingTest {
         client1 = null;
         client2 = null;
 
-        isFinishedClient1 = false;
-        isFinishedClient2 = false;
+        isFinishedThread1 = false;
+        isFinishedThread2 = false;
     }
 
     public class RequestHandler implements Runnable {
@@ -97,14 +76,18 @@ public class MultithreadingTest {
     }
 
     @Test
-    public void testProcessConnection() throws Exception {
-
+    public void testProcessConnection() throws InterruptedException {
         new Thread(new RequestHandler(client1, host, get1)).start();
-        new RequestHandler(client2, host, get2).run();
-        assertEquals(false, isFinishedClient1);
-        assertEquals(true, isFinishedClient2);
-        waitMonitor();
-        assertEquals(true, isFinishedClient1);
-        assertEquals(true, isFinishedClient2);
+        new Thread(new RequestHandler(client2, host, get2)).start();
+        synchronized (monitor){
+            monitor.wait();
+        }
+        assertEquals(false, isFinishedThread1);
+        assertEquals(true, isFinishedThread2);
+        synchronized (monitor){
+            monitor.wait();
+        }
+        assertEquals(true, isFinishedThread1);
+        assertEquals(true, isFinishedThread2);
     }
 }
