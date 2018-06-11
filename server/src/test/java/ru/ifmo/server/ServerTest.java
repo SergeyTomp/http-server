@@ -4,7 +4,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.*;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -13,11 +12,18 @@ import org.apache.http.util.EntityUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import ru.ifmo.server.scan.HandlerClassToAdd;
+import ru.ifmo.server.scan.ScanClassHandler;
 
+import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Collection;
 
-import static org.junit.Assert.*;
-import static ru.ifmo.server.TestUtils.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static ru.ifmo.server.TestUtils.assertStatusCode;
 
 /**
  * Tests main server functionality.
@@ -34,9 +40,13 @@ public class ServerTest {
 
     @BeforeClass
     public static void initialize() {
+        Collection<Class<?>> classes = new ArrayList<>();
+        classes.add(ScanClassHandler.class);
         ServerConfig cfg = new ServerConfig()
                 .addHandler(SUCCESS_URL, new SuccessHandler())
-                .addHandler(SERVER_ERROR_URL, new FailHandler());
+                .addHandler(SERVER_ERROR_URL, new FailHandler())
+                .addClasses(classes)
+                .addHandlerClass("/addHandler", HandlerClassToAdd.class);
 
         server = Server.start(cfg);
         client = HttpClients.createDefault();
@@ -144,6 +154,33 @@ public class ServerTest {
 
         assertNotImplemented(request);
     }
+
+    @Test
+    public void testScanClassGET() throws IOException, URISyntaxException {
+        URI uri = new URI("/scanGET");
+        HttpGet get = new HttpGet(uri);
+        CloseableHttpResponse response = client.execute(host, get);
+
+        assertStatusCode(HttpStatus.SC_OK, response);
+        assertEquals(SuccessHandler.TEST_RESPONSE +
+                        "<br>/scanGET" +
+                        SuccessHandler.CLOSE_HTML,
+                EntityUtils.toString(response.getEntity()));
+    }
+
+    @Test
+    public void testAddHandlersClasses() throws URISyntaxException, IOException {
+        URI uri = new URI("/addHandler");
+        HttpGet get = new HttpGet(uri);
+        CloseableHttpResponse response = client.execute(host, get);
+        assertStatusCode(HttpStatus.SC_OK, response);
+        assertEquals(SuccessHandler.TEST_RESPONSE +
+                        "<br>/addHandler" +
+                        SuccessHandler.CLOSE_HTML,
+                EntityUtils.toString(response.getEntity()));
+    }
+
+
 
     private void assertNotImplemented(HttpRequest request) throws Exception {
         CloseableHttpResponse response = client.execute(host, request);

@@ -1,4 +1,6 @@
-package ru.ifmo.server;
+package ru.ifmo.example.server;
+
+import ru.ifmo.server.*;
 
 import java.io.Writer;
 

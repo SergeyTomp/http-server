@@ -1,7 +1,5 @@
 package ru.ifmo.example.server;
 
-import ru.ifmo.server.HandlerClass1;
-import ru.ifmo.server.HandlerClass2;
 import ru.ifmo.server.Server;
 import ru.ifmo.server.ServerConfig;
 

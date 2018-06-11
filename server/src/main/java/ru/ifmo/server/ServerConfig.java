@@ -11,12 +11,14 @@ public class ServerConfig {
 
     private int port = DFLT_PORT;
     private Map<String, Handler> handlers;
+    private Map<String, Class<? extends Handler>> handlerClasses;
     private int socketTimeout;
     private Collection<Class<?>> classes;
 
     public ServerConfig() {
         handlers = new HashMap<>();
         classes = new HashSet<>();
+        handlerClasses = new HashMap<>();
     }
 
     public ServerConfig(ServerConfig config) {
@@ -26,6 +28,7 @@ public class ServerConfig {
         handlers = new HashMap<>(config.handlers);
         socketTimeout = config.socketTimeout;
         classes = new HashSet<>(config.classes);
+        handlerClasses = new HashMap<>(config.handlerClasses);
     }
 
     /**
@@ -59,7 +62,14 @@ public class ServerConfig {
 
         return this;
     }
-
+    public ServerConfig addHandlerClass(String path, Class<? extends Handler> hndCls) {
+        handlerClasses.put(path, hndCls);
+        return this;
+    }
+    public ServerConfig addHandlerClasses(Map<String, Class<? extends Handler>> hndCls){
+        handlerClasses.putAll(hndCls);
+        return this;
+    }
     /**
      * Add handler mappings.
      *
@@ -124,6 +134,8 @@ public class ServerConfig {
     public Collection<Class<?>> getClasses() {
         return classes;
     }
+    public Map<String, Class<? extends Handler>> getHandlerClasses() {
+        return handlerClasses;}
 
     @Override
     public String toString() {

@@ -108,6 +108,7 @@ public class Server implements Closeable {
                 LOG.debug("Starting server with config: {}", config);
 
             Server server = new Server(config);
+            server.addHandlerClasses(config.getHandlerClasses());
             server.addScanClasses(config.getClasses());
             server.openConnection();
             server.startAcceptor();
@@ -116,6 +117,42 @@ public class Server implements Closeable {
             return server;
         } catch (IOException e) {
             throw new ServerException("Cannot start server on port: " + config.getPort());
+        }
+    }
+
+    private void addHandlerClasses(Map<String, Class<? extends Handler>> handlerClasses) throws ServerException {
+
+        for (Map.Entry<String, Class<? extends Handler>> entry : handlerClasses.entrySet()) {
+            String url = entry.getKey();
+            Class<? extends Handler> value = entry.getValue();
+
+            Handler handler;
+            String name = value.getName();
+            Class<?> cls;
+
+            try {
+                cls = Class.forName(name);
+            } catch (ClassNotFoundException e) {
+                throw new ServerException("No definition for the class with the specified name could not be found", e);
+            }
+
+            if (Handler.class.isAssignableFrom(cls)) {
+
+                try {
+                    handler = value.getConstructor().newInstance();
+                } catch (NoSuchMethodException e) {
+                    throw new ServerException("This class " + cls.getSimpleName() + "does not contains an empty constructor");
+                } catch (Exception e) {
+                    throw new ServerException("Error when creating instance of the class", e);
+                }
+
+                if (!config.getHandlers().containsKey(url)){
+                    config.addHandler(url, handler);
+                }
+
+            } else {
+                throw new ServerException("This class " + cls.getSimpleName() + " cannot be implements from Handler");
+            }
         }
     }
 
@@ -213,24 +250,12 @@ public class Server implements Closeable {
         }
     }
 
-//    private void processReflectHandler(ReflectHandler refHand, Request req, Response resp, Socket sock) throws IOException {
-//        try {
-//            refHand.meth.invoke(refHand.obj, req, resp);
-//            sendResponse(resp, req);
-//        } catch (Exception e) { // Handle any user exception here.
-//            if (LOG.isDebugEnabled())
-//                LOG.error("Error invoke method:" + refHand.m, e);
-//
-//            respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
-//                    sock.getOutputStream());
-//        }
-//    }
 
     private void processReflectHandler(ReflectHandler refHand, Request req, Response resp, Socket sock) throws IOException {
         try {
             refHand.meth.invoke(refHand.obj, req, resp);
             sendResponse(resp, req);
-        } catch (Exception e) { // Handle any user exception here.
+        } catch (Exception e) {
             if (LOG.isDebugEnabled())
                 LOG.error("Error invoke method:" + refHand.meth, e);
 
