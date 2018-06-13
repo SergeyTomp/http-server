@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<config>
+    <port>8080</port>
+    <socketTimeout>5000</socketTimeout>
+    <handlers>
+        <handler url="/test_success">ru.ifmo.server.SuccessHandler</handler>
+    </handlers>
+    <classes>
+        <scanclass>ru.ifmo.server.scan.HandlerClassToAdd</scanclass>
+    </classes>
+</config>

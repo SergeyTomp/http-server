@@ -11,9 +11,7 @@ public class SuccessHandler implements Handler {
 
     @Override
     public void handle(Request request, Response response) throws Exception {
-
         response.getWriter().write((TEST_RESPONSE +
                 "<br>" + request.getArguments() + CLOSE_HTML));
-
     }
 }

@@ -16,15 +16,20 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import ru.ifmo.server.scan.HandlerClassToAdd;
+import ru.ifmo.server.scan.ScanClassHandler;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static org.junit.Assert.*;
 import static ru.ifmo.server.TestUtils.assertStatusCode;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Tests main server functionality.
@@ -33,7 +38,6 @@ public class ServerTest {
     private static final HttpHost host = new HttpHost("localhost", ServerConfig.DFLT_PORT);
 
     private static final String SUCCESS_URL = "/test_success";
-    private static final String SUCCESS_SESSION = "/test_sess_success";
     private static final String SUCCES_SESSION_OPEN = "/test_sess_open";
     private static final String SUCCES_SESSION_CHECK = "/test_sess_check";
     private static final String NOT_FOUND_URL = "/test_not_found";
@@ -49,14 +53,20 @@ public class ServerTest {
     }
 
     public static ServerConfig defaultConfig (){
+        Collection<Class<?>> classes = new ArrayList<>();
+        classes.add(ScanClassHandler.class);
         ServerConfig cfg = new ServerConfig()
                 .addHandler(SUCCESS_URL, new SuccessHandler())
                 .addHandler(SERVER_ERROR_URL, new FailHandler())
                 .addHandler(SUCCES_SESSION_OPEN, new SessionOpenHandler())
                 .addHandler(SUCCES_SESSION_CHECK, new SessionCheckHandler())
-                .addHandler(COOKIE_URL, new CookieHandler());
+                .addHandler(COOKIE_URL, new CookieHandler())
+                .addHandler(SERVER_ERROR_URL, new FailHandler())
+                .addClasses(classes)
+                .addHandlerClass("/addHandler", HandlerClassToAdd.class);;
         return cfg;
     }
+
 
     public static void startAll(ServerConfig cfg) {
         server = Server.start(cfg);
@@ -222,6 +232,33 @@ public class ServerTest {
 
         assertNotImplemented(request);
     }
+
+    @Test
+    public void testScanClassGET() throws IOException, URISyntaxException {
+        URI uri = new URI("/scanGET");
+        HttpGet get = new HttpGet(uri);
+        CloseableHttpResponse response = client.execute(host, get);
+
+        assertStatusCode(HttpStatus.SC_OK, response);
+        assertEquals(SuccessHandler.TEST_RESPONSE +
+                        "<br>/scanGET" +
+                        SuccessHandler.CLOSE_HTML,
+                EntityUtils.toString(response.getEntity()));
+    }
+
+    @Test
+    public void testAddHandlersClasses() throws URISyntaxException, IOException {
+        URI uri = new URI("/addHandler");
+        HttpGet get = new HttpGet(uri);
+        CloseableHttpResponse response = client.execute(host, get);
+        assertStatusCode(HttpStatus.SC_OK, response);
+        assertEquals(SuccessHandler.TEST_RESPONSE +
+                        "<br>/addHandler" +
+                        SuccessHandler.CLOSE_HTML,
+                EntityUtils.toString(response.getEntity()));
+    }
+
+
 
     private void assertNotImplemented(HttpRequest request) throws Exception {
         CloseableHttpResponse response = client.execute(host, request);
