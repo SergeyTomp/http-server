@@ -40,9 +40,6 @@ public class Response {
     public void setHeaders (Map<String, String> h){
         getHeaders().putAll(h);
     }
-    public void setHeader(String k, String v) {
-        getHeaders().put(k, v);
-    }
     public Map<String, String> getHeaders() {
         if(headers == null){
             headers = new HashMap<>();}
@@ -57,6 +54,13 @@ public class Response {
             cookieMap = new HashMap<>();
         }
         cookieMap.put(cookie.getKey(), cookie);
+    }
+
+    public void setHeader(String key, String val) {
+        if (headers == null) {
+            headers = new HashMap<>();
+        }
+        headers.put(key, val);
     }
 
     /**

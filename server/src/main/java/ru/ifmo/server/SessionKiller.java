@@ -9,7 +9,6 @@ import java.util.Map;
 public class SessionKiller implements Runnable {
 
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
-
     private final Map<String, Session> sessions;
 
     public SessionKiller(Map<String, Session> sessions) {

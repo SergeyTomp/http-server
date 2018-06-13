@@ -28,10 +28,12 @@ public class Request {
     private Session session;
     private final Map<String, Session> sessions;
 
+
     Request(Socket socket, Map<String, Session> sessions) {
         this.socket = socket;
         this.sessions = sessions;
     }
+
 
     /**
      * @return {@link InputStream} connected to the client.
@@ -85,7 +87,7 @@ public class Request {
         cookieMap.put(name, cookie);
     }
     public Map<String, Cookie> getCookies() {
-        if (!getHeaders().containsKey("Cookie")) {
+        if (getHeaders().get("Cookie") == null) {
             return emptyMap();
         }
         return unmodifiableMap(cookieMap);
@@ -110,6 +112,7 @@ public class Request {
             if (session == null) {
                 session = getSession(true);
             }
+//            session.setExpire(1); //продлим сессию, если она есть
         }
         return session;
     }
