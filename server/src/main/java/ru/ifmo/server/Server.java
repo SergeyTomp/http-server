@@ -293,8 +293,10 @@ public class Server implements Closeable {
                 if (LOG.isDebugEnabled())
                     LOG.error("Server error:", e);
 
-String htmlMsg = CustomErrorResponse.coderespMap.get(SC_SERVER_ERROR) == null ? SC_SERVER_ERROR + " Server error"
-                        : CustomErrorResponse.coderespMap.get(SC_SERVER_ERROR);                respond(SC_SERVER_ERROR, "Server Error", htmlMessage(htmlMsg),
+
+                String htmlMsg = CustomErrorResponse.coderespMap.get(SC_SERVER_ERROR) == null ? SC_SERVER_ERROR + " Server error"
+                        : CustomErrorResponse.coderespMap.get(SC_SERVER_ERROR);
+                respond(SC_SERVER_ERROR, "Server Error", htmlMessage(htmlMsg),
                         sock.getOutputStream());
             }
         }
@@ -315,7 +317,7 @@ String htmlMsg = CustomErrorResponse.coderespMap.get(SC_SERVER_ERROR) == null ? 
                 resp.printWriter.flush();
 
             if (resp.byteOut != null) {
-                if (config.getCompressionType() != null && isCompressionSupported(req)){
+                if (config.getCompressionType() != null && isCompressionSupported(req)) {
                     resp.byteOut = compress(resp.byteOut);
                     resp.setHeader(Http.CONTENT_ENCODING, config.getCompressionType().toString().toLowerCase());
                 }
@@ -378,8 +380,6 @@ String htmlMsg = CustomErrorResponse.coderespMap.get(SC_SERVER_ERROR) == null ? 
         }
         return req;
     }
-
-
 
     private void parseRequestLine(Request req, StringBuilder sb) throws URISyntaxException {
         int start = 0;
