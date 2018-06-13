@@ -13,6 +13,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.GZIPOutputStream;
 
 import static ru.ifmo.server.Http.*;
 import static ru.ifmo.server.Session.SESSION_COOKIENAME;
@@ -183,10 +185,14 @@ public class Server implements Closeable {
             if (resp.printWriter != null)
                 resp.printWriter.flush();
 
-            if (resp.headers != null && resp.headers.get(CONTENT_LENGTH) == null) {
-                if (resp.byteOut != null)
-                    resp.setContentLength(resp.byteOut.size());
+            if (resp.byteOut != null) {
+                if (config.getCompressionType() != null && isCompressionSupported(req)){
+                    resp.byteOut = compress(resp.byteOut);
+                    resp.setHeader(Http.CONTENT_ENCODING, config.getCompressionType().toString().toLowerCase());
+                }
+                resp.setContentLength(resp.byteOut.size());
             }
+
             if (resp.getStatusCode() == 0) {
                 resp.setStatusCode(Http.SC_OK);
             }
@@ -241,8 +247,13 @@ public class Server implements Closeable {
                 parseHeader(req, sb);
             sb.setLength(0);
         }
+//        for (Map.Entry entry : req.getHeaders().entrySet()){
+//            System.out.println(entry.getKey() + " : " + entry.getValue());
+//        }
         return req;
     }
+
+
 
     private void parseRequestLine(Request req, StringBuilder sb) throws URISyntaxException {
         int start = 0;
@@ -332,6 +343,38 @@ public class Server implements Closeable {
     private void respond(int code, String statusMsg, String content, OutputStream out) throws IOException {
         out.write(("HTTP/1.0" + SPACE + code + SPACE + statusMsg + CRLF + CRLF + content).getBytes());
         out.flush();
+    }
+    private boolean isCompressionSupported(Request req) {
+        String unPursedTypes = req.getHeaders().get(Http.ACCEPT_ENCODING);
+        String[] parsedTypes = unPursedTypes.replaceAll("\\p{Punct}", " ")
+                .trim().toUpperCase().split("\\s");
+
+        for (String str : parsedTypes) {
+            if (str.length() > 0 && config.getCompressionType() != null
+                    && CompressionType.valueOf(str) == config.getCompressionType())
+                return true;
+        }
+        return false;
+    }
+
+    private ByteArrayOutputStream compress(ByteArrayOutputStream bodyBytes) throws IOException {
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        OutputStream compressor = null;
+        if (config.getCompressionType() == CompressionType.GZIP) {
+            compressor = new GZIPOutputStream(outputStream);
+        }
+
+        if (config.getCompressionType() == CompressionType.DEFLATE) {
+            compressor = new DeflaterOutputStream(outputStream);
+        }
+
+        assert compressor != null;
+
+        compressor.write(bodyBytes.toByteArray());
+        compressor.close();
+
+        return outputStream;
     }
 
     /**
