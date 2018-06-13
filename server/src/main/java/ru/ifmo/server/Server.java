@@ -5,11 +5,13 @@ import org.slf4j.LoggerFactory;
 import ru.ifmo.server.util.Utils;
 
 import java.io.*;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -60,12 +62,27 @@ public class Server implements Closeable {
     private final ServerConfig config;
     private ServerSocket socket;
     private ExecutorService acceptorPool;
+    private ExecutorService connectionProcessingPool;
+    private Map<String, ReflectHandler> classHandlers;
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
     private Thread killSess;
     private Map<String, Session> sessions = new ConcurrentHashMap<>();
 
     private Server(ServerConfig config) {
         this.config = new ServerConfig(config);
+        classHandlers = new HashMap<>();
+    }
+
+    Map<String, Session> getSessions() {
+        return sessions;
+    }
+
+    void setSessions(String key, Session session) {
+        sessions.put(key, session);
+    }
+
+    void removeSession(String key) {
+        sessions.remove(key);
     }
 
     private void startSessionKiller() {
@@ -73,7 +90,7 @@ public class Server implements Closeable {
         killSess = new Thread(sessionKiller);
         killSess.start();
 
-        LOG.info("Session killer started, session will be deleted by timeout.");
+        LOG.info("Session killer process started, session will be deleted by timeout.");
     }
 
     /**
@@ -93,13 +110,52 @@ public class Server implements Closeable {
                 LOG.debug("Starting server with config: {}", config);
 
             Server server = new Server(config);
+            server.addHandlerClasses(config.getHandlerClasses());
+            server.addScanClasses(config.getClasses());
             server.openConnection();
             server.startAcceptor();
+            server.connectionProcessingPool = Executors.newCachedThreadPool();
             LOG.info("Server started on port: {}", config.getPort());
             server.startSessionKiller();
             return server;
         } catch (IOException e) {
             throw new ServerException("Cannot start server on port: " + config.getPort());
+        }
+    }
+
+    private void addHandlerClasses(Map<String, Class<? extends Handler>> handlerClasses) throws ServerException {
+
+        for (Map.Entry<String, Class<? extends Handler>> entry : handlerClasses.entrySet()) {
+            String url = entry.getKey();
+            Class<? extends Handler> value = entry.getValue();
+
+            Handler handler;
+            String name = value.getName();
+            Class<?> cls;
+
+            try {
+                cls = Class.forName(name);
+            } catch (ClassNotFoundException e) {
+                throw new ServerException("No class with the specified name was found", e);
+            }
+
+            if (Handler.class.isAssignableFrom(cls)) {
+
+                try {
+                    handler = value.getConstructor().newInstance();
+                } catch (NoSuchMethodException e) {
+                    throw new ServerException("This class " + cls.getSimpleName() + "does not contains empty constructor");
+                } catch (Exception e) {
+                    throw new ServerException("Error when creating instance of the class", e);
+                }
+
+                if (!config.getHandlers().containsKey(url)){
+                    config.addHandler(url, handler);
+                }
+
+            } else {
+                throw new ServerException("This class " + cls.getSimpleName() + " cannot be implemented as Handler");
+            }
         }
     }
 
@@ -117,10 +173,79 @@ public class Server implements Closeable {
      */
     public void stop() {
         acceptorPool.shutdownNow();
+        connectionProcessingPool.shutdownNow();
         killSess.interrupt();
         Utils.closeQuiet(socket);
         socket = null;
         sessions.clear();
+    }
+
+    private class ReflectHandler {
+        Method meth;
+        Object obj;
+        HttpMethod[] httpMethods;
+
+        ReflectHandler(Object obj, Method meth, HttpMethod[] httpMethods) {
+            assert meth != null;
+            assert obj != null;
+            assert httpMethods != null && httpMethods.length != 0;
+
+            this.meth = meth;
+            this.obj = obj;
+            this.httpMethods = httpMethods;
+        }
+        boolean isApplicable(HttpMethod method) {
+            return Arrays.stream(httpMethods).anyMatch(m -> m == method);
+        }
+    }
+
+
+    private void addScanClasses(Collection<Class<?>> classes) {
+        Collection<Class<?>> classList = new ArrayList<>(classes);
+
+        for (Class<?> cls : classList) {
+            try {
+                for (Method method : cls.getDeclaredMethods()) {
+                    URL annot = method.getAnnotation(URL.class);
+                    if (annot != null) {
+                        Class<?>[] params = method.getParameterTypes();
+                        Class<?> methodType = method.getReturnType();
+
+                        if (params.length == 2
+                                && methodType.equals(void.class)
+                                && Modifier.isPublic(method.getModifiers())
+                                && params[0].equals(Request.class)
+                                && params[1].equals(Response.class)) {
+                            String path = annot.value();
+                            HttpMethod[] meth = annot.method();
+//                            EnumSet<HttpMethod> set = EnumSet.copyOf(Arrays.asList(annot.method()));
+                            ReflectHandler reflectHandler = new ReflectHandler(cls.getConstructor().newInstance(), method, meth);
+//                            ReflectHandler reflectHandler = new ReflectHandler(c.getConstructor().newInstance(), method, set);
+                            classHandlers.put(path, reflectHandler);
+                        } else {
+                            throw new ServerException("Invalid @URL annotated method: " + cls.getSimpleName() + "." + method.getName() + "(). "
+                                    + "Valid method must be public, void and accept only two arguments: Request and Response.");
+                        }
+                    }
+                }
+            } catch (ReflectiveOperationException e) {
+                throw new ServerException("Unable initialize @URL annotated handlers. ", e);
+            }
+        }
+    }
+
+
+    private void processReflectHandler(ReflectHandler refHand, Request req, Response resp, Socket sock) throws IOException {
+        try {
+            refHand.meth.invoke(refHand.obj, req, resp);
+            sendResponse(resp, req);
+        } catch (Exception e) {
+            if (LOG.isDebugEnabled())
+                LOG.error("Error invoke method:" + refHand.meth, e);
+
+            respond(SC_SERVER_ERROR, "Server Error", htmlMessage(SC_SERVER_ERROR + " Server error"),
+                    sock.getOutputStream());
+        }
     }
 
     private void processConnection(Socket sock) throws IOException {
@@ -167,16 +292,20 @@ public class Server implements Closeable {
             } catch (Exception e) {
                 if (LOG.isDebugEnabled())
                     LOG.error("Server error:", e);
-                String htmlMsg = CustomErrorResponse.coderespMap.get(SC_SERVER_ERROR) == null ? SC_SERVER_ERROR + " Server error"
-                        : CustomErrorResponse.coderespMap.get(SC_SERVER_ERROR);
-                respond(SC_SERVER_ERROR, "Server Error", htmlMessage(htmlMsg),
+
+String htmlMsg = CustomErrorResponse.coderespMap.get(SC_SERVER_ERROR) == null ? SC_SERVER_ERROR + " Server error"
+                        : CustomErrorResponse.coderespMap.get(SC_SERVER_ERROR);                respond(SC_SERVER_ERROR, "Server Error", htmlMessage(htmlMsg),
                         sock.getOutputStream());
             }
-        } else {
-            String htmlMsg = CustomErrorResponse.coderespMap.get(SC_NOT_FOUND) == null ? SC_NOT_FOUND + " Not found"
-                    : CustomErrorResponse.coderespMap.get(SC_NOT_FOUND);
-            respond(SC_NOT_FOUND, "Not Found", htmlMessage(htmlMsg),
-                    sock.getOutputStream());
+        }
+        else{
+            ReflectHandler reflectHandler = classHandlers.get(req.getPath());
+            if (reflectHandler != null && reflectHandler.isApplicable(req.method))
+                processReflectHandler(reflectHandler, req, resp, sock);
+            else{
+                respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not found"),
+                        sock.getOutputStream());
+            }
         }
     }
 
@@ -233,8 +362,8 @@ public class Server implements Closeable {
         } catch (Exception e) {
             throw new ServerException("Fail to get output stream", e);
         }
-    }
 
+}
     private Request parseRequest(Socket socket) throws IOException, URISyntaxException {
         InputStreamReader reader = new InputStreamReader(socket.getInputStream());
         Request req = new Request(socket, sessions);
@@ -247,9 +376,6 @@ public class Server implements Closeable {
                 parseHeader(req, sb);
             sb.setLength(0);
         }
-//        for (Map.Entry entry : req.getHeaders().entrySet()){
-//            System.out.println(entry.getKey() + " : " + entry.getValue());
-//        }
         return req;
     }
 
@@ -336,7 +462,6 @@ public class Server implements Closeable {
 
         if (LOG.isTraceEnabled())
             LOG.trace("Read line: {}", sb.toString());
-//        System.out.println(sb.toString());
         return count;
     }
 
@@ -382,7 +507,7 @@ public class Server implements Closeable {
      *
      * @throws IOException Should be never thrown.
      */
-    public void close()  {
+    public void close() throws IOException {
         stop();
     }
 
@@ -391,16 +516,50 @@ public class Server implements Closeable {
     }
 
     private class ConnectionHandler implements Runnable {
+
         public void run() {
+            connectionProcessingPool = Executors.newCachedThreadPool();
             while (!Thread.currentThread().isInterrupted()) {
-                try (Socket sock = socket.accept()) {
+                try {Socket sock = socket.accept();
                     sock.setSoTimeout(config.getSocketTimeout());
-                    processConnection(sock);
+                    connectionProcessingPool.submit(new NewConnection(sock));
                 } catch (Exception e) {
                     if (!Thread.currentThread().isInterrupted())
                         LOG.error("Error accepting connection", e);
                 }
             }
+        }
+    }
+
+    private class NewConnection implements Runnable {
+        Socket sock;
+        NewConnection(Socket sock) {
+            this.sock = sock;
+        }
+        @Override
+        public void run() {
+
+                try {
+                    if (LOG.isDebugEnabled())
+                        LOG.debug("New connection opened " + Thread.currentThread().getName());
+
+                    processConnection(sock);
+                }
+                catch (IOException e) {
+                    LOG.error("Error input / output during data transfer", e);
+                }
+                finally {
+                    try {
+                        sock.close();
+
+                        if (LOG.isDebugEnabled())
+                            LOG.debug("Connection closed " + Thread.currentThread().getName());
+                    } catch (IOException e) {
+//                    if (!Thread.currentThread().isInterrupted())
+//                        LOG.error("Error accepting connection", e);
+                        LOG.error("Error closing the socket", e);
+                    }
+                }
         }
     }
 }

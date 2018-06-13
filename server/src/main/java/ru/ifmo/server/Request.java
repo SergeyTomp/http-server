@@ -110,7 +110,6 @@ public class Request {
             if (session == null) {
                 session = getSession(true);
             }
-//            session.setExpire(1); //продлим сессию, если она есть
         }
         return session;
     }

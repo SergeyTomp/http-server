@@ -1,5 +1,6 @@
 package ru.ifmo.server;
 
+import java.util.*;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -18,11 +19,15 @@ public class ServerConfig {
 
     private int port = DFLT_PORT;
     private Map<String, Handler> handlers;
+    private Map<String, Class<? extends Handler>> handlerClasses;
     private int socketTimeout;
+    private Collection<Class<?>> classes;
     private CompressionType compressionType;
 
     public ServerConfig() {
         handlers = new HashMap<>();
+        classes = new HashSet<>();
+        handlerClasses = new HashMap<>();
     }
 
     public ServerConfig(ServerConfig config) {
@@ -30,6 +35,8 @@ public class ServerConfig {
         port = config.port;
         handlers = new HashMap<>(config.handlers);
         socketTimeout = config.socketTimeout;
+        classes = new HashSet<>(config.classes);
+        handlerClasses = new HashMap<>(config.handlerClasses);
         compressionType = config.compressionType;
     }
 
@@ -64,7 +71,14 @@ public class ServerConfig {
 
         return this;
     }
-
+    public ServerConfig addHandlerClass(String path, Class<? extends Handler> hndCls) {
+        handlerClasses.put(path, hndCls);
+        return this;
+    }
+    public ServerConfig addHandlerClasses(Map<String, Class<? extends Handler>> hndCls){
+        handlerClasses.putAll(hndCls);
+        return this;
+    }
     /**
      * Add handler mappings.
      *
@@ -124,6 +138,22 @@ public class ServerConfig {
 
         return this;
     }
+
+    public ServerConfig addClasses(Collection<Class<?>> classes) {
+        this.classes.addAll(classes);
+
+        return this;
+    }
+
+    public void addClass(Class<?> cls) {
+        this.classes.add(cls);
+    }
+
+    public Collection<Class<?>> getClasses() {
+        return classes;
+    }
+    public Map<String, Class<? extends Handler>> getHandlerClasses() {
+        return handlerClasses;}
 
     public void setErrorPage(int code, String pageName) {
         InputStream in = Server.class.getClassLoader().getResourceAsStream(pageName);

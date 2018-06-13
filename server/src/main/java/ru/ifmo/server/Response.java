@@ -71,9 +71,8 @@ public class Response {
             throw new ServerException("Cannot get outputstream", e);
         }
     }
-
-    public OutputStream getOutputStream() {
-        if (byteOut == null){
+public OutputStream getOutputStream() {
+        if (byteOut == null) {
             byteOut = new ByteArrayOutputStream();
         }
         return byteOut;
@@ -84,8 +83,7 @@ public class Response {
         if (printWriter == null) {
             printWriter = new OutputStreamWriter(getOutputStream());
         }
-        return printWriter;
-    }
+        return printWriter;}
 
 }
 
