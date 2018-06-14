@@ -18,9 +18,4 @@ public class ScanClassHandler {
     public void indexScanClassGET(Request request, Response response) throws IOException {
         response.getWriter().write((TEST_RESPONSE + "<br>" + request.getPath() + CLOSE_HTML));
     }
-
-    @URL(method = HttpMethod.GET, value = "/userException")
-    public void throwException(Request request, Response response) throws Exception {
-        throw new Exception("oops!");
-    }
 }

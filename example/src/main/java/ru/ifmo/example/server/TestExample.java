@@ -1,5 +1,6 @@
 package ru.ifmo.example.server;
 
+import ru.ifmo.server.CompressionType;
 import ru.ifmo.server.Server;
 import ru.ifmo.server.ServerConfig;
 
@@ -38,6 +39,7 @@ public class TestExample {
 //        config.addClass(HandlersClass.class);
         config.addHandlerClass("/index", HandlerClass1.class);
         config.addHandlerClass("/index/ifmo", HandlerClass2.class);
+        config.setCompression(CompressionType.GZIP);
         Server.start(config);
     }
 }

@@ -9,8 +9,8 @@ public class SessionCheckHandler implements Handler{
     @Override
     public void handle(Request request, Response response) throws Exception {
 
-        if(request.getSession().getParam("login") != null){
-            response.getWriter().write(request.getSession().getParam("login").toString());
+        if(request.getSession().getData("login") != null){
+            response.getWriter().write(request.getSession().getData("login").toString());
         }
         else response.getWriter().write(" ");
     }

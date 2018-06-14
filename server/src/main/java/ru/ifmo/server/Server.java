@@ -73,10 +73,6 @@ public class Server implements Closeable {
         classHandlers = new HashMap<>();
     }
 
-    Map<String, Session> getSessions() {
-        return sessions;
-    }
-
     void setSessions(String key, Session session) {
         sessions.put(key, session);
     }
@@ -317,6 +313,7 @@ public class Server implements Closeable {
                 resp.printWriter.flush();
 
             if (resp.byteOut != null) {
+//                System.out.println(resp.byteOut.toString());
                 if (config.getCompressionType() != null && isCompressionSupported(req)) {
                     resp.byteOut = compress(resp.byteOut);
                     resp.setHeader(Http.CONTENT_ENCODING, config.getCompressionType().toString().toLowerCase());
@@ -337,9 +334,9 @@ public class Server implements Closeable {
                 }
             }
 
-            if (req.getSession() != null) {
+//            if (req.getSession() != null) {
                 resp.addCookie(new Cookie(SESSION_COOKIENAME, req.getSession().getId()));
-            }
+//            }
 
             for (Map.Entry<String, Cookie> entry : resp.cookieMap.entrySet()) {
                 StringBuilder cookieLine = new StringBuilder();
@@ -378,6 +375,9 @@ public class Server implements Closeable {
                 parseHeader(req, sb);
             sb.setLength(0);
         }
+//        for (Map.Entry entry : req.getHeaders().entrySet()){
+//            System.out.println(entry.getKey() + " : " + entry.getValue());
+//        }
         return req;
     }
 

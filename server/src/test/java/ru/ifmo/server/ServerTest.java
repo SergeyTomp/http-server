@@ -12,10 +12,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 import ru.ifmo.server.scan.HandlerClassToAdd;
 import ru.ifmo.server.scan.ScanClassHandler;
 
@@ -28,8 +25,6 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 import static ru.ifmo.server.TestUtils.assertStatusCode;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * Tests main server functionality.
@@ -63,7 +58,8 @@ public class ServerTest {
                 .addHandler(COOKIE_URL, new CookieHandler())
                 .addHandler(SERVER_ERROR_URL, new FailHandler())
                 .addClasses(classes)
-                .addHandlerClass("/addHandler", HandlerClassToAdd.class);;
+                .addHandlerClass("/addHandler", HandlerClassToAdd.class);
+//                cfg.setCompression(CompressionType.GZIP);
         return cfg;
     }
 
@@ -82,6 +78,18 @@ public class ServerTest {
         client = null;
     }
 
+//    @Before
+//    public void init() {
+//        client = HttpClients.createDefault();
+//    }
+//
+//    @After
+//    public void close() {
+//        IOUtils.closeQuietly(client);
+//        client = null;
+//    }
+
+//    @Ignore("no method developed")
     @Test
     public void testSuccess() throws Exception {
         // TODO test headers
@@ -103,7 +111,7 @@ public class ServerTest {
                         SuccessHandler.CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
         }
-
+//    @Ignore("no method developed")
     @Test
     public void testSession () throws URISyntaxException, IOException, InterruptedException {
         URI uri = new URIBuilder(SUCCES_SESSION_OPEN)
@@ -127,17 +135,20 @@ public class ServerTest {
         assertStatusCode(HttpStatus.SC_OK, response);
         assertNotEquals("Session data are invalid","password", EntityUtils.toString(response.getEntity()));
     }
-
+//    @Ignore("no method developed")
     @Test
     public void testCookie() throws Exception {
 
         HttpGet req = new HttpGet(COOKIE_URL);
         req.setHeader("Cookie", "somename=somevalue");
         CloseableHttpResponse response = client.execute(host, req);
-        assertEquals("somename=somevalue", EntityUtils.toString(response.getEntity()));
+        String test = EntityUtils.toString(response.getEntity());
+//        assertEquals("somename=somevalue", EntityUtils.toString(response.getEntity()));
+        assertEquals("somename=somevalue", test);
+        System.out.println(test);
     }
 
-
+//    @Ignore("no method developed")
     @Test
     public void testNotFound() throws Exception {
         HttpGet get = new HttpGet(NOT_FOUND_URL);
@@ -147,7 +158,7 @@ public class ServerTest {
         assertStatusCode(HttpStatus.SC_NOT_FOUND, response);
         assertNotNull(EntityUtils.toString(response.getEntity()));
     }
-
+//    @Ignore("no method developed")
     @Test
     public void testServerError() throws Exception {
         HttpGet get = new HttpGet(SERVER_ERROR_URL);
@@ -157,14 +168,14 @@ public class ServerTest {
         assertStatusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR, response);
         assertNotNull(EntityUtils.toString(response.getEntity()));
     }
-
+//    @Ignore("no method developed")
     @Test
     public void testPost() throws Exception {
         HttpPost request = new HttpPost(SUCCESS_URL);
 
         assertNotImplemented(request);
     }
-    @Ignore ("no method developed")
+    @Ignore("no method developed")
     @Test
     public void testPut() throws Exception {
 
@@ -195,14 +206,14 @@ public class ServerTest {
                         SuccessHandler.CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
     }
-
+//    @Ignore("no method developed")
     @Test
     public void testDelete() throws Exception {
         HttpRequest request = new HttpDelete(SUCCESS_URL);
 
         assertNotImplemented(request);
     }
-
+//    @Ignore("no method developed")
     @Test
     public void testHead() throws Exception {
         HttpRequest request = new HttpHead(SUCCESS_URL);
@@ -211,28 +222,28 @@ public class ServerTest {
 
         assertStatusCode(HttpStatus.SC_NOT_IMPLEMENTED, response);
     }
-
+//    @Ignore("no method developed")
     @Test
     public void testOptions() throws Exception {
         HttpRequest request = new HttpOptions(SUCCESS_URL);
 
         assertNotImplemented(request);
     }
-
+//    @Ignore("no method developed")
     @Test
     public void testTrace() throws Exception {
         HttpRequest request = new HttpTrace(SUCCESS_URL);
 
         assertNotImplemented(request);
     }
-
+//    @Ignore("no method developed")
     @Test
     public void testPatch() throws Exception {
         HttpRequest request = new HttpPatch(SUCCESS_URL);
 
         assertNotImplemented(request);
     }
-
+//    @Ignore("no method developed")
     @Test
     public void testScanClassGET() throws IOException, URISyntaxException {
         URI uri = new URI("/scanGET");
@@ -245,7 +256,7 @@ public class ServerTest {
                         SuccessHandler.CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
     }
-
+//    @Ignore("no method developed")
     @Test
     public void testAddHandlersClasses() throws URISyntaxException, IOException {
         URI uri = new URI("/addHandler");
