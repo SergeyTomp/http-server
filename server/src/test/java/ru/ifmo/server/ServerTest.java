@@ -56,7 +56,7 @@ public class ServerTest {
         ServerConfig cfg = new ServerConfig()
                 .addHandler(SUCCESS_URL, new SuccessHandler())
                 .addHandler(SERVER_ERROR_URL, new FailHandler())
-                .addHandler(POST_PUT_URL, new SuccessPostPutHandler());
+                .addHandler(POST_PUT_URL, new SuccessPostPutHandler())
                 .addHandler(SERVER_ERROR_URL, new FailHandler())
                 .addHandler(SUCCES_SESSION_OPEN, new SessionOpenHandler())
                 .addHandler(SUCCES_SESSION_CHECK, new SessionCheckHandler())
