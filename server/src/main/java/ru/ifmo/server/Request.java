@@ -28,12 +28,10 @@ public class Request {
     private Session session;
     private final Map<String, Session> sessions;
 
-
     Request(Socket socket, Map<String, Session> sessions) {
         this.socket = socket;
         this.sessions = sessions;
     }
-
 
     /**
      * @return {@link InputStream} connected to the client.
@@ -102,7 +100,7 @@ public class Request {
         }
         return session;
     }
-    // рекурсивно создаём сессию если не найдена в Map sessions на сервере, (чтобы не задваивать блок создания)
+
     public Session getSession(boolean open) {
         if (!getCookies().containsKey(SESSION_COOKIENAME) || open) {
             session = new Session();
@@ -112,7 +110,6 @@ public class Request {
             if (session == null) {
                 session = getSession(true);
             }
-//            session.setExpire(1); //продлим сессию, если она есть
         }
         return session;
     }
