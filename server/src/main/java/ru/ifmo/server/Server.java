@@ -369,15 +369,19 @@ public class Server implements Closeable {
             sb.setLength(0);
         }
 
-        if ((req.getMethod() == HttpMethod.POST || req.getMethod() == HttpMethod.PUT) && req.headers.get("Content-Type") != null && (
-                req.headers.get("Content-Type").contains("application/x-www-form-urlencoded")
-                || req.headers.get("Content-Type").contains("text/text"))) {
+        if (isPOSTorPUT(req)) {
             readBody(reader, sb, req);
-            if (req.headers.get("Content-Type").contains("application/x-www-form-urlencoded")){
+            if (req.headers.get(CONTENT_TYPE).contains(URL_ENCODED)){
                 parseArgs(req, req.body);
             }
         }
         return req;
+    }
+
+    private boolean isPOSTorPUT(Request req) {
+        return (req.getMethod() == HttpMethod.POST || req.getMethod() == HttpMethod.PUT) && req.headers.get(CONTENT_TYPE) != null && (
+                req.headers.get(CONTENT_TYPE).contains(URL_ENCODED)
+                || req.headers.get(CONTENT_TYPE).contains(TEXT_PLAIN));
     }
 
     private void parseRequestLine(Request req, StringBuilder sb) throws URISyntaxException {

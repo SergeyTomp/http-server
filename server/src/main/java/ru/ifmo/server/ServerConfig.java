@@ -15,7 +15,7 @@ import static java.util.stream.Collectors.toList;
  */
 public class ServerConfig {
     /** Default local port. */
-    public static final int DFLT_PORT = 8081;
+    public static final int DFLT_PORT = 8080;
 
     private int port = DFLT_PORT;
     private Map<String, Handler> handlers;
