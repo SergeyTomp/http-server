@@ -195,7 +195,6 @@ public class Server implements Closeable {
         }
     }
 
-
     private void addScanClasses(Collection<Class<?>> classes) {
         Collection<Class<?>> classList = new ArrayList<>(classes);
 
@@ -214,9 +213,7 @@ public class Server implements Closeable {
                                 && params[1].equals(Response.class)) {
                             String path = annot.value();
                             HttpMethod[] meth = annot.method();
-//                            EnumSet<HttpMethod> set = EnumSet.copyOf(Arrays.asList(annot.method()));
                             ReflectHandler reflectHandler = new ReflectHandler(cls.getConstructor().newInstance(), method, meth);
-//                            ReflectHandler reflectHandler = new ReflectHandler(c.getConstructor().newInstance(), method, set);
                             classHandlers.put(path, reflectHandler);
                         } else {
                             throw new ServerException("Invalid @URL annotated method: " + cls.getSimpleName() + "." + method.getName() + "(). "
@@ -313,7 +310,6 @@ public class Server implements Closeable {
                 resp.printWriter.flush();
 
             if (resp.byteOut != null) {
-//                System.out.println(resp.byteOut.toString());
                 if (config.getCompressionType() != null && isCompressionSupported(req)) {
                     resp.byteOut = compress(resp.byteOut);
                     resp.setHeader(Http.CONTENT_ENCODING, config.getCompressionType().toString().toLowerCase());
@@ -333,10 +329,7 @@ public class Server implements Closeable {
                     pw.write(e.getKey() + ": " + e.getValue() + CRLF);
                 }
             }
-
-//            if (req.getSession() != null) {
                 resp.addCookie(new Cookie(SESSION_COOKIENAME, req.getSession().getId()));
-//            }
 
             for (Map.Entry<String, Cookie> entry : resp.cookieMap.entrySet()) {
                 StringBuilder cookieLine = new StringBuilder();
@@ -375,9 +368,6 @@ public class Server implements Closeable {
                 parseHeader(req, sb);
             sb.setLength(0);
         }
-//        for (Map.Entry entry : req.getHeaders().entrySet()){
-//            System.out.println(entry.getKey() + " : " + entry.getValue());
-//        }
         return req;
     }
 
@@ -538,7 +528,6 @@ public class Server implements Closeable {
         }
         @Override
         public void run() {
-
             try {
                 if (LOG.isDebugEnabled())
                     LOG.debug("New connection opened " + Thread.currentThread().getName());
@@ -555,8 +544,6 @@ public class Server implements Closeable {
                     if (LOG.isDebugEnabled())
                         LOG.debug("Connection closed " + Thread.currentThread().getName());
                 } catch (IOException e) {
-//                    if (!Thread.currentThread().isInterrupted())
-//                        LOG.error("Error accepting connection", e);
                     LOG.error("Error closing the socket", e);
                 }
             }
