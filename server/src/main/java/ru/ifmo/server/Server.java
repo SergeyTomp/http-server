@@ -539,27 +539,27 @@ public class Server implements Closeable {
         @Override
         public void run() {
 
+            try {
+                if (LOG.isDebugEnabled())
+                    LOG.debug("New connection opened " + Thread.currentThread().getName());
+
+                processConnection(sock);
+                Thread.currentThread().interrupt();
+            }
+            catch (IOException e) {
+                LOG.error("Error input / output during data transfer", e);
+            }
+            finally {
                 try {
+                    sock.close();
                     if (LOG.isDebugEnabled())
-                        LOG.debug("New connection opened " + Thread.currentThread().getName());
-
-                    processConnection(sock);
-                }
-                catch (IOException e) {
-                    LOG.error("Error input / output during data transfer", e);
-                }
-                finally {
-                    try {
-                        sock.close();
-
-                        if (LOG.isDebugEnabled())
-                            LOG.debug("Connection closed " + Thread.currentThread().getName());
-                    } catch (IOException e) {
+                        LOG.debug("Connection closed " + Thread.currentThread().getName());
+                } catch (IOException e) {
 //                    if (!Thread.currentThread().isInterrupted())
 //                        LOG.error("Error accepting connection", e);
-                        LOG.error("Error closing the socket", e);
-                    }
+                    LOG.error("Error closing the socket", e);
                 }
+            }
         }
     }
 }
