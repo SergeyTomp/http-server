@@ -89,6 +89,14 @@ public class Server implements Closeable {
         LOG.info("Session killer process started, session will be deleted by timeout.");
     }
 
+    public static Server start() {
+        return start(new ConfigLoader().load());
+    }
+
+    public static Server start(File file) {
+        return start(new ConfigLoader().load(file));
+    }
+
     /**
      * Starts server according to config. If null passed
      * defaults will be used.
