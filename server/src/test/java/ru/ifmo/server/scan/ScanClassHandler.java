@@ -15,7 +15,7 @@ public class ScanClassHandler {
     public static final String TEST_RESPONSE = OPEN_HTML + "<html><body>Test response";
 
     @URL(method = HttpMethod.GET, value = "/scanGET")
-    public void indexScanClassGET(Request request, Response response) throws IOException {
+    public void scanClassGET(Request request, Response response) throws IOException {
         response.getWriter().write((TEST_RESPONSE + "<br>" + request.getPath() + CLOSE_HTML));
     }
 }

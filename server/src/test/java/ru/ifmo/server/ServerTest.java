@@ -4,15 +4,11 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.*;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.junit.*;
 import ru.ifmo.server.scan.HandlerClassToAdd;
@@ -23,7 +19,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 import static org.junit.Assert.*;
 import static ru.ifmo.server.TestUtils.assertStatusCode;
@@ -115,7 +110,6 @@ public class ServerTest {
         HttpGet get = new HttpGet(uri);
         CloseableHttpResponse response = client.execute(host, get);
         assertStatusCode(HttpStatus.SC_OK, response);
-
         uri = new URIBuilder(SUCCES_SESSION_CHECK)
                 .addParameter("login", "password")
                 .build();
@@ -161,20 +155,12 @@ public class ServerTest {
     @Test
     public void testPost() throws Exception {
         HttpPost request = new HttpPost(POST_PUT_URL);
-
-
         String bodey = "Some body";
-
         request.addHeader("Content-Type", "text/plain");
-
         request.setEntity(new StringEntity(bodey, "UTF-8"));
-
         CloseableHttpResponse response = client.execute(host, request);
-
         assertStatusCode(HttpStatus.SC_OK, response);
-        assertEquals(SuccessHandler.TEST_RESPONSE +
-                        "<br>Some body" +
-                        SuccessHandler.CLOSE_HTML,
+        assertEquals(SuccessHandler.TEST_RESPONSE + "<br>Some body" + SuccessHandler.CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
     }
 
@@ -182,19 +168,12 @@ public class ServerTest {
     public void testPut() throws Exception {
 
         HttpPost request = new HttpPost(POST_PUT_URL);
-
-
         String bodey = "Some body";
-
         request.addHeader("Content-Type", "text/plain");
-
         request.setEntity(new StringEntity(bodey, "UTF-8"));
-
         CloseableHttpResponse response = client.execute(host, request);
         assertStatusCode(HttpStatus.SC_OK, response);
-        assertEquals(SuccessHandler.TEST_RESPONSE +
-                        "<br>Some body" +
-                        SuccessHandler.CLOSE_HTML,
+        assertEquals(SuccessHandler.TEST_RESPONSE + "<br>Some body" + SuccessHandler.CLOSE_HTML,
                 EntityUtils.toString(response.getEntity()));
     }
 
@@ -208,7 +187,6 @@ public class ServerTest {
     public void testHead() throws Exception {
         HttpRequest request = new HttpHead(SUCCESS_URL);
         CloseableHttpResponse response = client.execute(host, request);
-
         assertStatusCode(HttpStatus.SC_OK, response);
     }
 

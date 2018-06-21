@@ -1,8 +1,5 @@
 package ru.ifmo.server;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 
@@ -11,14 +8,14 @@ public abstract class AbstractParser implements Parser {
 
     protected final InputStream in;
 
-    public AbstractParser(File file) {
-
-        try {
-            in = new FileInputStream(file);
-        } catch (FileNotFoundException e) {
-            throw new ServerException("Cannot find config file", e);
-        }
-    }
+//    public AbstractParser(File file) {
+//
+//        try {
+//            in = new FileInputStream(file);
+//        } catch (FileNotFoundException e) {
+//            throw new ServerException("Cannot find config file", e);
+//        }
+//    }
 
     public AbstractParser(InputStream in) {
         this.in = in;
