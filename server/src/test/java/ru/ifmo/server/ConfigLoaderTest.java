@@ -1,6 +1,7 @@
 package ru.ifmo.server;
 
 import org.junit.Test;
+import ru.ifmo.server.scan.ScanClassHandler;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,7 +18,7 @@ import static org.junit.Assert.assertNotNull;
 public class ConfigLoaderTest {
 
     private static String PATH = "/success";
-    private static String className = "ru.ifmo.server.ScanClassFile";
+    private static String className = "ru.ifmo.server.scan.ScanClassHandler";
 
     @Test
     public void testProperties() throws IOException {
@@ -29,7 +30,7 @@ public class ConfigLoaderTest {
         Files.copy(in, tmpFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         ServerConfig config = new ConfigLoader().load(tmpFile);
         checkConfig(config);
-        checkScanClass(config);
+        checkScanHandlers(config);
     }
 
     @Test
@@ -42,13 +43,14 @@ public class ConfigLoaderTest {
         Files.copy(in, tmpFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         ServerConfig config = new ConfigLoader().load(tmpFile);
         checkConfig(config);
-        checkScanClass(config);
+        checkScanHandlers(config);
     }
 
     @Test
     public void testClasspath() throws Exception {
         ServerConfig config = new ConfigLoader().load();
         checkConfig(config);
+        checkScanHandlers(config);
     }
 
     private void checkConfig(ServerConfig config) {
@@ -61,10 +63,10 @@ public class ConfigLoaderTest {
         assertEquals(SuccessHandler.class, config.getHandlers().get(PATH).getClass());
     }
 
-    private void checkScanClass(ServerConfig config) {
+    private void checkScanHandlers(ServerConfig config) {
         for (Class<?> cls : config.getClasses()) {
             assertEquals(className, cls.getName());
-            assertEquals(ScanClassFile.class, cls);
+            assertEquals(ScanClassHandler.class, cls);
         }
     }
 }

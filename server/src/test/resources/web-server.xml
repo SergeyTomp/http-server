@@ -6,6 +6,6 @@
         <handler url="/success">ru.ifmo.server.SuccessHandler</handler>
     </handlers>
     <classes>
-        <scanclass>ru.ifmo.server.ScanClassFile</scanclass>
+        <handlersclass>ru.ifmo.server.scan.ScanClassHandler</handlersclass>
     </classes>
 </config>
