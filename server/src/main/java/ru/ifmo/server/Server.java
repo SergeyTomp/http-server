@@ -114,8 +114,8 @@ public class Server implements Closeable {
                 LOG.debug("Starting server with config: {}", config);
 
             Server server = new Server(config);
-            server.addHandlerClasses(config.getHandlerClasses());
-            server.addScanClasses(config.getClasses());
+            server.addHandlerClass(config.getHandlerClasses());
+            server.scanHandlersClass(config.getClasses());
             server.openConnection();
             server.startAcceptor();
             server.connectionProcessingPool = Executors.newCachedThreadPool();
@@ -127,7 +127,7 @@ public class Server implements Closeable {
         }
     }
 
-    private void addHandlerClasses(Map<String, Class<? extends Handler>> handlerClasses) throws ServerException {
+    private void addHandlerClass(Map<String, Class<? extends Handler>> handlerClasses) throws ServerException {
 
         for (Map.Entry<String, Class<? extends Handler>> entry : handlerClasses.entrySet()) {
             String url = entry.getKey();
@@ -162,6 +162,8 @@ public class Server implements Closeable {
             }
         }
     }
+
+
 
     private void openConnection() throws IOException {
         socket = new ServerSocket(config.getPort());
@@ -203,7 +205,7 @@ public class Server implements Closeable {
         }
     }
 
-    private void addScanClasses(Collection<Class<?>> classes) {
+    private void scanHandlersClass(Collection<Class<?>> classes) {
         Collection<Class<?>> classList = new ArrayList<>(classes);
 
         for (Class<?> cls : classList) {
