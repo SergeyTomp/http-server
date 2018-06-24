@@ -9,10 +9,6 @@ import java.util.Properties;
 
 public class PropertiesParser extends AbstractParser {
 
-//    public PropertiesParser(File file) {
-//        super(file);
-//    }
-
     public PropertiesParser(InputStream in) {
         super(in);
     }

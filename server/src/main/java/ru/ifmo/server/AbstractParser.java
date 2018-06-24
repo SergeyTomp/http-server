@@ -8,15 +8,6 @@ public abstract class AbstractParser implements Parser {
 
     protected final InputStream in;
 
-//    public AbstractParser(File file) {
-//
-//        try {
-//            in = new FileInputStream(file);
-//        } catch (FileNotFoundException e) {
-//            throw new ServerException("Cannot find config file", e);
-//        }
-//    }
-
     public AbstractParser(InputStream in) {
         this.in = in;
     }

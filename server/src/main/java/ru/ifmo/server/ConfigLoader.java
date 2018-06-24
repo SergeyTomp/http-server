@@ -33,11 +33,9 @@ public class ConfigLoader {
         }
         if (file.getName().endsWith(".properties")){
             return new PropertiesParser(in);
-//            return new PropertiesParser(file);
         }
         if (file.getName().endsWith(".xml")){
             return new XmlParser(in);
-//            return new XmlParser(file);
         }
         throw new ServerException("Unsupported file type");
     }

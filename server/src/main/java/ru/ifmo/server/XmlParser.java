@@ -9,9 +9,6 @@ import java.io.InputStream;
 
 public class XmlParser extends AbstractParser {
 
-//    public XmlParser(File file) {
-//        super(file);
-//    }
 
     public XmlParser(InputStream in) {
         super(in);
