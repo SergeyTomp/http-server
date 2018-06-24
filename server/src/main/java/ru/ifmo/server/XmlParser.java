@@ -47,7 +47,7 @@ public class XmlParser extends AbstractParser {
                 String qName = reader.getName().getLocalPart();
                 String val = value.toString().trim();
                 if ("handler".equals(qName)) {
-                    Handler handler = (Handler) Class.forName(val).newInstance();
+                    Handler handler = (Handler) Class.forName(val).getConstructor().newInstance();
                     config.addHandler(url, handler);
                 } else if ("handlersclass".equals(qName)) {
                     config.addClass(Class.forName(val));
