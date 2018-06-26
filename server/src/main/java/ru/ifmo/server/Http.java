@@ -26,6 +26,12 @@ public class Http {
 
     /** Mime types */
     public static final String TEXT_PLAIN = "text/plain";
+    public static final String TEXT_HTML = "text/html";
+    public static final String IMAGE_JPEG = "image/jpeg";
+    public static final String APPLICATION_PDF = "application/pdf";
+    public static final String APPLICATION_JS = "application/javascript";
+    public static final String IMAGE_PNG = "image/png";
+    public static final String TEXT_CSS = "text/css";
     public static final String URL_ENCODED = "application/x-www-form-urlencoded";
 
     /** Header names */
