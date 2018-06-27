@@ -12,18 +12,17 @@ public abstract class AbstractParser implements Parser {
         this.in = in;
     }
 
-    protected void reflectiveSetParam(ServerConfig config, String key, String val) throws ReflectiveOperationException {
+    protected void reflectiveSetParam(ServerConfig config, String methName, String val) throws ReflectiveOperationException {
 
-        String setterName = setterName(key);
+        String setter = "set" + Character.toUpperCase(methName.charAt(0)) + methName.substring(1);
 
         Method[] methods = ServerConfig.class.getDeclaredMethods();
         for (Method method : methods) {
-            String name  = method.getName();
 
-            if (setterName.equals(name)) {
+            if (setter.equals(method.getName())) {
                 Class<?>[] params = method.getParameterTypes();
 
-                assert params.length == 1;
+                assert params.length == 1 :"Invalid parameters quantity - must be one only!";
 
                 Class<?> type = toPrimitive(params[0]);
 
@@ -54,9 +53,8 @@ public abstract class AbstractParser implements Parser {
 
                 } else {
                     Class<?> aClass = Class.forName(val);
-                    Object obj = aClass.newInstance();
+                    Object obj = aClass.getConstructor().newInstance();
                     method.invoke(config, obj);
-
                 }
             }
         }
@@ -92,14 +90,5 @@ public abstract class AbstractParser implements Parser {
             return byte.class;
 
         return cls;
-    }
-
-    private String setterName(String key) {
-        String setterName = key;
-        char letter = setterName.charAt(0);
-        letter = Character.toUpperCase(letter);
-        setterName = setterName.substring(1);
-
-        return "set" + letter + setterName;
     }
 }
