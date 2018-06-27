@@ -14,16 +14,16 @@ public abstract class AbstractParser implements Parser {
 
     protected void reflectiveSetParam(ServerConfig config, String key, String val) throws ReflectiveOperationException {
 
-        String setter = setterName(key);
+        String setterName = setterName(key);
 
         Method[] methods = ServerConfig.class.getDeclaredMethods();
         for (Method method : methods) {
-            String methodName = method.getName();
+            String name  = method.getName();
 
-            if (setter.equals(methodName)) {
+            if (setterName.equals(name)) {
                 Class<?>[] params = method.getParameterTypes();
 
-                assert params.length == 1 : "Incorrect method parameters quantity!";
+                assert params.length == 1;
 
                 Class<?> type = toPrimitive(params[0]);
 
@@ -53,7 +53,9 @@ public abstract class AbstractParser implements Parser {
                     method.invoke(config, Byte.parseByte(val));
 
                 } else {
-                    throw new ServerException("Invalid parameter type for reflective setter invocation");
+                    Class<?> aClass = Class.forName(val);
+                    Object obj = aClass.newInstance();
+                    method.invoke(config, obj);
 
                 }
             }
