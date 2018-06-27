@@ -15,7 +15,6 @@ public abstract class AbstractParser implements Parser {
     protected void reflectiveSetParam(ServerConfig config, String methName, String val) throws ReflectiveOperationException {
 
         String setter = "set" + Character.toUpperCase(methName.charAt(0)) + methName.substring(1);
-
         Method[] methods = ServerConfig.class.getDeclaredMethods();
         for (Method method : methods) {
 
