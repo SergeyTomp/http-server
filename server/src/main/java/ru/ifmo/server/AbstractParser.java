@@ -23,7 +23,7 @@ public abstract class AbstractParser implements Parser {
                 Class<?>[] params = method.getParameterTypes();
 
                 assert params.length == 1 :"Invalid parameters quantity - must be one only!";
-                
+
                 Class<?> type = toPrimitive(params[0]);
 
                 if (int.class == type) {
