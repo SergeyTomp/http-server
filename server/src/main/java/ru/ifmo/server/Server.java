@@ -1,5 +1,6 @@
 package ru.ifmo.server;
 
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ifmo.server.util.Utils;
@@ -18,6 +19,7 @@ import java.util.concurrent.Executors;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.GZIPOutputStream;
 
+import static org.apache.commons.io.FilenameUtils.*;
 import static ru.ifmo.server.Http.*;
 import static ru.ifmo.server.Session.SESSION_COOKIENAME;
 import static ru.ifmo.server.util.Utils.htmlMessage;
@@ -303,11 +305,18 @@ public class Server implements Closeable {
                         sock.getOutputStream());
             }
         }
-        else{
+        else if (classHandlers.get(req.getPath()) != null){
             ReflectHandler reflectHandler = classHandlers.get(req.getPath());
             if (reflectHandler != null && reflectHandler.isApplicable(req.method))
                 processReflectHandler(reflectHandler, req, resp, sock);
-            else{
+        }
+        else {
+            String path = config.getStaticDirectory() + File.separatorChar + req.getPath().substring(1);
+            if (new File(path).exists()) {
+                fileHandlers(path, resp);
+                sendResponse(resp, req);
+
+            } else {
                 respond(SC_NOT_FOUND, "Not Found", htmlMessage(SC_NOT_FOUND + " Not found"),
                         sock.getOutputStream());
             }
@@ -440,21 +449,6 @@ public class Server implements Closeable {
             if (key != null)
                 req.addArgument(key, null);
         }
-    }
-
-    private void parseBody(Request req, StringBuilder sb){
-        String key = null;
-        int len = sb.length();
-        int start = 0;
-
-        for (int i = 0; i < len; i++) {
-            if (sb.charAt(i) == LF) {
-                key = sb.substring(start, i).trim();
-                start = i + 1;
-                break;
-            }
-        }
-        req.addBody("123");
     }
 
     private void parseHeader(Request req, StringBuilder sb) {
@@ -610,4 +604,51 @@ public class Server implements Closeable {
             }
         }
     }
+
+    private void fileHandlers(String filepath, Response resp) throws IOException {
+        File file = new File(filepath);
+        String extension =  getExtension(filepath);
+        long contentlength = file.length();
+        String contentType = null;
+        switch (extension) {
+            case "txt":
+                contentType = TEXT_PLAIN;
+                break;
+            case "html":
+                contentType = TEXT_HTML;
+                break;
+            case "jpg":
+                contentType = IMAGE_JPEG;
+                break;
+            case "pdf":
+                contentType = APPLICATION_PDF;
+                break;
+            case "png":
+                contentType = IMAGE_PNG;
+                break;
+            case "css":
+                contentType = TEXT_CSS;
+                break;
+            case "js":
+                contentType = APPLICATION_JS;
+                break;
+        }
+        resp.setHeader(CONTENT_LENGTH, String.valueOf(contentlength));
+        resp.setContentLength(contentlength);
+        resp.setHeader(CONTENT_TYPE, contentType);
+        resp.setContentType(contentType);
+        getFileContent(file, resp);
+    }
+
+    private void getFileContent(File file, Response response) throws IOException {
+        String thisLine;
+        try (BufferedReader br =
+                     new BufferedReader(new FileReader(file))) {
+            while ((thisLine = br.readLine()) != null) {
+                response.getOutputStream().write(thisLine.getBytes());
+            }
+
+        }
+    }
+
 }

@@ -75,6 +75,7 @@ public class Response {
             throw new ServerException("Cannot get outputstream", e);
         }
     }
+
 public OutputStream getOutputStream() {
         if (byteOut == null) {
             byteOut = new ByteArrayOutputStream();

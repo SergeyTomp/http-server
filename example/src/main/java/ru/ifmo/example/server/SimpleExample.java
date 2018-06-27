@@ -18,7 +18,8 @@ public class SimpleExample {
         // Define config with request handlers
         ServerConfig config = new ServerConfig()
                 .addHandler("/info.html", printHandler)
-                .addHandler("/info", printHandler);
+                .addHandler("/info", printHandler)
+                .setStaticDirectory("C:\\Users\\mi\\IdeaProjects\\http-project\\example\\src\\main\\java\\ru\\ifmo\\example\\server\\some_static");
 
         // Start server
         @SuppressWarnings("unused")

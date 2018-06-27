@@ -1,5 +1,6 @@
 package ru.ifmo.server;
 
+import java.io.File;
 import java.util.*;
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -23,6 +24,7 @@ public class ServerConfig {
     private int socketTimeout;
     private Collection<Class<?>> classes;
     private CompressionType compressionType;
+    private String staticDirectory;
 
     public ServerConfig() {
         handlers = new HashMap<>();
@@ -38,6 +40,7 @@ public class ServerConfig {
         classes = new HashSet<>(config.classes);
         handlerClasses = new HashMap<>(config.handlerClasses);
         compressionType = config.compressionType;
+        staticDirectory = config.staticDirectory;
     }
 
     /**
@@ -172,5 +175,14 @@ public class ServerConfig {
                 ", socketTimeout=" + socketTimeout +
                 ", compressionType=" + compressionType +
                 '}';
+    }
+
+    public ServerConfig setStaticDirectory(String path) {
+        staticDirectory = path;
+        return this;
+    }
+
+    public String getStaticDirectory() {
+        return staticDirectory;
     }
 }
