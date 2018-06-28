@@ -1,6 +1,5 @@
 package ru.ifmo.server;
 
-import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ifmo.server.util.Utils;
@@ -19,7 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.GZIPOutputStream;
 
-import static org.apache.commons.io.FilenameUtils.*;
+import static org.apache.commons.io.FilenameUtils.getExtension;
 import static ru.ifmo.server.Http.*;
 import static ru.ifmo.server.Session.SESSION_COOKIENAME;
 import static ru.ifmo.server.util.Utils.htmlMessage;
@@ -155,7 +154,7 @@ public class Server implements Closeable {
                     throw new ServerException("Error when creating instance of the class", e);
                 }
 
-                if (!config.getHandlers().containsKey(url)){
+                if (!config.getHandlers().containsKey(url)) {
                     config.addHandler(url, handler);
                 }
 
@@ -164,7 +163,6 @@ public class Server implements Closeable {
             }
         }
     }
-
 
 
     private void openConnection() throws IOException {
@@ -202,6 +200,7 @@ public class Server implements Closeable {
             this.obj = obj;
             this.httpMethods = httpMethods;
         }
+
         boolean isApplicable(HttpMethod method) {
             return Arrays.stream(httpMethods).anyMatch(m -> m == method);
         }
@@ -304,13 +303,11 @@ public class Server implements Closeable {
                 respond(SC_SERVER_ERROR, "Server Error", htmlMessage(htmlMsg),
                         sock.getOutputStream());
             }
-        }
-        else if (classHandlers.get(req.getPath()) != null){
+        } else if (classHandlers.get(req.getPath()) != null) {
             ReflectHandler reflectHandler = classHandlers.get(req.getPath());
             if (reflectHandler != null && reflectHandler.isApplicable(req.method))
                 processReflectHandler(reflectHandler, req, resp, sock);
-        }
-        else {
+        } else {
             String path = config.getStaticDirectory() + File.separatorChar + req.getPath().substring(1);
             if (new File(path).exists()) {
                 fileHandlers(path, resp);
@@ -348,7 +345,7 @@ public class Server implements Closeable {
                     pw.write(e.getKey() + ": " + e.getValue() + CRLF);
                 }
             }
-                resp.addCookie(new Cookie(SESSION_COOKIENAME, req.getSession().getId()));
+            resp.addCookie(new Cookie(SESSION_COOKIENAME, req.getSession().getId()));
 
             for (Map.Entry<String, Cookie> entry : resp.cookieMap.entrySet()) {
                 StringBuilder cookieLine = new StringBuilder();
@@ -367,14 +364,16 @@ public class Server implements Closeable {
 
             pw.write(CRLF);
             pw.flush();
-            if (resp.byteOut != null){
-                out.write(resp.byteOut.toByteArray());}
+            if (resp.byteOut != null) {
+                out.write(resp.byteOut.toByteArray());
+            }
             out.flush();
         } catch (Exception e) {
             throw new ServerException("Fail to get output stream", e);
         }
 
-}
+    }
+
     private Request parseRequest(Socket socket) throws IOException, URISyntaxException {
         InputStreamReader reader = new InputStreamReader(socket.getInputStream());
         Request req = new Request(socket, sessions);
@@ -390,7 +389,7 @@ public class Server implements Closeable {
 
         if (isPOSTorPUT(req)) {
             readBody(reader, sb, req);
-            if (req.headers.get(CONTENT_TYPE).contains(URL_ENCODED)){
+            if (req.headers.get(CONTENT_TYPE).contains(URL_ENCODED)) {
                 parseArgs(req, req.body);
             }
         }
@@ -400,7 +399,7 @@ public class Server implements Closeable {
     private boolean isPOSTorPUT(Request req) {
         return (req.getMethod() == HttpMethod.POST || req.getMethod() == HttpMethod.PUT) && req.headers.get(CONTENT_TYPE) != null && (
                 req.headers.get(CONTENT_TYPE).contains(URL_ENCODED)
-                || req.headers.get(CONTENT_TYPE).contains(TEXT_PLAIN));
+                        || req.headers.get(CONTENT_TYPE).contains(TEXT_PLAIN));
     }
 
     private void parseRequestLine(Request req, StringBuilder sb) throws URISyntaxException {
@@ -514,6 +513,7 @@ public class Server implements Closeable {
         out.write(("HTTP/1.0" + SPACE + code + SPACE + statusMsg + CRLF + CRLF + content).getBytes());
         out.flush();
     }
+
     private boolean isCompressionSupported(Request req) {
         String unPursedTypes = req.getHeaders().get(Http.ACCEPT_ENCODING);
         String[] parsedTypes = unPursedTypes.replaceAll("\\p{Punct}", " ")
@@ -565,7 +565,8 @@ public class Server implements Closeable {
         public void run() {
             connectionProcessingPool = Executors.newCachedThreadPool();
             while (!Thread.currentThread().isInterrupted()) {
-                try {Socket sock = socket.accept();
+                try {
+                    Socket sock = socket.accept();
                     sock.setSoTimeout(config.getSocketTimeout());
                     connectionProcessingPool.submit(new NewConnection(sock));
                 } catch (Exception e) {
@@ -578,9 +579,11 @@ public class Server implements Closeable {
 
     private class NewConnection implements Runnable {
         Socket sock;
+
         NewConnection(Socket sock) {
             this.sock = sock;
         }
+
         @Override
         public void run() {
             try {
@@ -588,12 +591,10 @@ public class Server implements Closeable {
                     LOG.debug("New connection opened " + Thread.currentThread().getName());
 
                 processConnection(sock);
-                Thread.currentThread().interrupt();
-            }
-            catch (IOException e) {
+//                Thread.currentThread().interrupt();
+            } catch (IOException e) {
                 LOG.error("Error input / output during data transfer", e);
-            }
-            finally {
+            } finally {
                 try {
                     sock.close();
                     if (LOG.isDebugEnabled())
@@ -607,7 +608,7 @@ public class Server implements Closeable {
 
     private void fileHandlers(String filepath, Response resp) throws IOException {
         File file = new File(filepath);
-        String extension =  getExtension(filepath);
+        String extension = getExtension(filepath);
         long contentlength = file.length();
         String contentType = null;
         switch (extension) {

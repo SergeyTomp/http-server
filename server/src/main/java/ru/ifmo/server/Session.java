@@ -30,8 +30,8 @@ public class Session {
     public LocalDateTime getExpire() {
         return expire;
     }
-    // не уверен в необходимости синхронизации, пока пусть будет
-    public synchronized void setExpire(int minutes) {
+
+    public void setExpire(int minutes) {
 //        this.expire = LocalDateTime.now().plusMinutes(minutes);
         this.expire = LocalDateTime.now().plusSeconds(minutes);
     }
@@ -47,7 +47,7 @@ public class Session {
 //        expired = true;
 //        Server.removeSession(id);
 //    }
-    // не уверен в необходимости синхронизации, пока пусть будет
+
     public <T> void setData(String key, T value) throws SessionException { //T value напр. корзина покупок, пока не используется
         if (!expired) {
             if (sessionData == null) {
