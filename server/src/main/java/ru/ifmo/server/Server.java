@@ -286,8 +286,15 @@ public class Server implements Closeable {
             return;
         }
 
-        Handler handler = config.handler(req.getPath());
+
+        Dispatcher dispatcher = config.getDispatcher();
         Response resp = new Response(sock);
+        Handler handler;
+        if (dispatcher != null) {
+            handler  = config.handler(dispatcher.dispatch(req, resp));
+        } else {
+            handler = config.handler(req.getPath());
+        }
 
         if (handler != null) {
             try {
