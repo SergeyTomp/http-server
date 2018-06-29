@@ -26,6 +26,16 @@ public class ServerConfig {
     private CompressionType compressionType;
     private String staticDirectory;
 
+    public Dispatcher getDispatcher() {
+        return dispatcher;
+    }
+
+    public void setDispatcher(Dispatcher dispatcher) {
+        this.dispatcher = dispatcher;
+    }
+
+    private Dispatcher dispatcher;
+
     public ServerConfig() {
         handlers = new HashMap<>();
         classes = new HashSet<>();
@@ -41,6 +51,7 @@ public class ServerConfig {
         handlerClasses = new HashMap<>(config.handlerClasses);
         compressionType = config.compressionType;
         staticDirectory = config.staticDirectory;
+        dispatcher = config.dispatcher;
     }
 
     /**
