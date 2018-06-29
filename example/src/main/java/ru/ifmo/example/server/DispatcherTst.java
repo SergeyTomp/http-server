@@ -15,6 +15,9 @@ public class DispatcherTst {
     private static class RequestDispatcher implements Dispatcher {
         @Override
         public String dispatch(Request request, Response response) {
+            if (request.getPath().contains("123")) {
+                return "/index";
+            }
             return "/dispatcher";
         }
     }

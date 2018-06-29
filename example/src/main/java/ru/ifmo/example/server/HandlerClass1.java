@@ -17,8 +17,8 @@ public class HandlerClass1 implements Handler {
         response.setContentType(TEXT_PLAIN + "; UTF-8");
         //Пишем тело
         Writer wr = response.getWriter();
-        wr.write("Привет МИР!\r\n");
-        wr.write("Досвидания!\r\n");
+        wr.write("HELLO WORLD!\r\n");
+        wr.write("GOODBYE!\r\n");
         wr.flush();
     }
 }
