@@ -641,9 +641,7 @@ public class Server implements Closeable {
                 contentType = APPLICATION_JS;
                 break;
         }
-        resp.setHeader(CONTENT_LENGTH, String.valueOf(contentlength));
         resp.setContentLength(contentlength);
-        resp.setHeader(CONTENT_TYPE, contentType);
         resp.setContentType(contentType);
         getFileContent(file, resp);
     }
