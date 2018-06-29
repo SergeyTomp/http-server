@@ -7,6 +7,9 @@ import java.io.Writer;
 import static ru.ifmo.server.Http.TEXT_PLAIN;
 
 public class HandlersClass {
+    private final String OPEN_HTML = "<html><body>";
+    private final String CLOSE_HTML = "</html></body>";
+    private final String TEST_RESPONSE = "<html><body>Test response";
 
     @URL(method = {HttpMethod.GET},value = "/index")
     public void handle1(Request request, Response response) throws Exception {
@@ -32,6 +35,11 @@ public class HandlersClass {
         wr.write("Тест первого обработчика запроса!\r\n");
         wr.write("Удачно!\r\n");
         wr.flush();
+    }
+    @URL(method = {HttpMethod.GET}, value = "/index/ifmo2")
+    public void handle3(Request request, Response response) throws Exception {
+            response.getWriter().write((TEST_RESPONSE +
+                    "<br>" + request.getArguments() + CLOSE_HTML));
     }
 
 }

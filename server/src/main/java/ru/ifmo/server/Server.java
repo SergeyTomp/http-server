@@ -365,6 +365,7 @@ public class Server implements Closeable {
             pw.write(CRLF);
             pw.flush();
             if (resp.byteOut != null) {
+                System.out.println(resp.byteOut.toString());
                 out.write(resp.byteOut.toByteArray());
             }
             out.flush();

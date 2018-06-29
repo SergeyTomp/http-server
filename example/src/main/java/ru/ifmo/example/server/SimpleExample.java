@@ -40,7 +40,8 @@ public class SimpleExample {
         @Override
         public void handle(Request request, Response response) throws Exception {
             // Set correct header
-            StringBuilder sb = new StringBuilder(Http.OK_HEADER);
+//            StringBuilder sb = new StringBuilder(Http.OK_HEADER);
+            StringBuilder sb = new StringBuilder();
 
             // Set doctype
             sb.append("<!DOCTYPE html>");
